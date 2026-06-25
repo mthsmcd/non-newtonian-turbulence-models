@@ -1,0 +1,7 @@
+.vscode/*
+.idea/*
+CMakeLists.txt
+cmake*
+
+lnInclude*
+linux*

@@ -1,0 +1,8 @@
+./viscosity-models/RASHerschelBulkley/RASHerschelBulkley.C
+
+./turbulence-models/MalinKE/MalinKE.C
+./turbulence-models/BartosikKE/BartosikKE.C
+./turbulence-models/GRkEpsilonZetaF/GRkEpsilonZetaF.C
+./turbulence-models/LKTSkOmegaSST/LKTSkOmegaSST.C
+
+LIB = $(FOAM_USER_LIBBIN)/libNonNewtonianRAS
