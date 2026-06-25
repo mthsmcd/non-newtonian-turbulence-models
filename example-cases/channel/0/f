@@ -1,0 +1,105 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2306                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       volScalarField;
+    location    "0";
+    object      f;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   uniform 1.0;
+
+boundaryField
+{
+    inlet
+    {
+        type            cyclic;
+    }
+    outlet
+    {
+        type            cyclic;
+    }
+    channelCenter
+    {
+        type            symmetryPlane;
+    }
+    lowerWall
+    {
+        type            fixedValue;
+        value           uniform 1e-10;
+    }
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+
+
+// ************************************************************************* //
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+lowerWall
+    {
+        type            codedFixedValue;
+        value           uniform 0.0; 
+
+        name            RASHBfWallFunction;
+        codeInclude     #{
+				#include "wallDist.H"
+				#include "fvCFD.H"
+		#};
+        code            #{
+
+			const volScalarField& nnu = this->db().lookupObject<volScalarField>("nu");
+			const volScalarField& zeta = this->db().lookupObject<volScalarField>("zeta");
+			//const scalarField& magSqrGradSqrtZeta = magSqr(Foam::fvc::grad(sqrt(zeta)));
+			const fvMesh& mesh_ = patch().boundaryMesh().mesh();
+			const volScalarField& y_(wallDist::New(mesh_).y());
+			
+			const label id = mesh_.boundary().findPatchID("lowerWall");
+			const fvPatch& boundaryPatch = mesh_.boundary()[id];
+			const labelList wallCells = boundaryPatch.faceCells();
+			
+			scalarField fw(boundaryPatch.size(), 0.0);
+			
+			forAll(fw, fwi)
+			{
+				label celli = wallCells[fwi];
+				//fw[fwi] = -2.0 * nnu[celli] * magSqrGradSqrtZeta[celli];
+				fw[fwi] = (-2.0 * nnu[celli] * zeta[celli])
+								/sqr(y_[celli]);
+			}
+			operator==(fw);
+		#};
+        codeOptions     #{
+			-I$(LIB_SRC)/finiteVolume/lnInclude\
+			-I$(LIB_SRC)/meshTools/lnInclude\
+			-I$(LIB_SRC)/TurbulenceModels/lnInclude
+		#};
+        codeLibs        #{ -lfiniteVolume -lmeshTools 
+		#};
+    }
+	
+*/

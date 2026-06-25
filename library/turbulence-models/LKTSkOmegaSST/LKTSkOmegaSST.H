@@ -149,12 +149,6 @@ protected:
 
         // Fields
 
-            //- Apparent viscosity
-            volScalarField  etta_;
-
-            //- Bounding value
-            dimensionedScalar ettaMin_;
-
             //- non-Newtonian viscosity
             volScalarField nuNN_;
 
@@ -188,6 +182,12 @@ protected:
             dimensionedScalar tau0_;
             dimensionedScalar nu0_;
             dimensionedScalar m_;
+
+            //- Apparent viscosity
+            volScalarField  etta_;
+
+            //- Bounding value
+            dimensionedScalar ettaMin_;
 
             // non-Newtonian blending function used to calculate Ce_
             dimensionedScalar Fe_;

@@ -124,7 +124,7 @@ protected:
         dimensionedScalar Kind_;
         dimensionedScalar n_;
         dimensionedScalar tau0_;
-        dimensionedScalar tauw_;
+        dimensionedScalar xi_;
 
         // Apparent viscosity
         volScalarField etta_;

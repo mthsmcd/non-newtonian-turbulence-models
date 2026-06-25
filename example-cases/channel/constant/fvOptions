@@ -1,0 +1,71 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2306                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "constant";
+    object          fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+momentumSource
+{
+    type            meanVelocityForce;
+    active          yes;
+
+    meanVelocityForceCoeffs
+    {
+        selectionMode   all;
+
+        fields      	(U);
+        Ubar            (1.43 0 0);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// momentumSource
+// {
+	// type	frictionVelocityForce;
+	// active	yes;
+	
+	// frictionVelocityForceCoeffs
+	// {
+		// selectionMode	all;
+		
+		// fields				(U);
+		// utau				0.0593985;
+		// crossSectionArea	0.2;
+		// wallPerimeter		0.2;
+		// flowDir				(1 0 0);
+		// relaxation			1e-3;
+	// }
+// }
+
+
+// ************************************************************************* //

@@ -132,7 +132,7 @@ void MalinKE::correctApparentViscosity()
         Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
     }
 
-    Info << "Average apparent viscosity etta = " << gAverage(etta_) << endl;
+    Info << "Average apparent viscosity nu = " << gAverage(etta_) << endl;
 }
 
 dimensionedScalar MalinKE::wallFriction() const
@@ -464,11 +464,8 @@ void MalinKE::correct()
     fvOptions.correct(k_);
     bound(k_, this->kMin_);
 
-// Update nut with latest available k,epsilon
-    correctNut();
-
-// update etta_
     correctApparentViscosity();
+    correctNut();
 }
 
 Foam::tmp<Foam::fvVectorMatrix>

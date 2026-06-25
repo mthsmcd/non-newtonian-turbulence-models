@@ -60,21 +60,20 @@ void GRkEpsilonZetaF::correctNut()
 
 void GRkEpsilonZetaF::correctApparentViscosity()
 {
-    Info << "Updating apparent viscosity etta" << endl;
     volScalarField etta0 = etta_;
     for (int i = 0; i < nCorrNu_; ++i)
     {
         correctApparentViscosity(calcEtta(strainRate()));
     }
 
-    Info << "Etta residual after " << nCorrNu_ << " iterations = " << sum(mag(etta_ - etta0)).value() << endl;
+    Info << "Nu residual after " << nCorrNu_ << " iterations = " << sum(mag(etta_ - etta0)).value() << endl;
 
     if (tau0_.value() > 0.0)
     {
         dimensionedScalar tw = wallFriction();
         Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
     }
-    Info << "Average apparent viscosity etta = " << gAverage(etta_) << endl;
+    Info << "Average apparent viscosity nu = " << gAverage(etta_) << endl;
 }
 
 void GRkEpsilonZetaF::correctNuNN()
@@ -393,20 +392,6 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
 
     NNFlag_(coeffDict_.getOrDefault<Switch>("NNFlag", true)),
 
-    etta_
-    (
-        IOobject
-        (
-            "nu",
-            runTime_.timeName(),
-            mesh_,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_,
-        Kind_
-    ),
-
     k_
     (
         IOobject
@@ -431,19 +416,6 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
             IOobject::AUTO_WRITE
         ),
         mesh_
-    ),
-
-    epsw_
-    (
-        IOobject
-        (
-            IOobject::groupName("epsw", alphaRhoPhi.group()),
-            runTime_.timeName(),
-            mesh_,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        2.0*etta_*magSqr(fvc::grad(sqrt(k_)))
     ),
 
     zeta_
@@ -509,8 +481,6 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
 
     epsilonZeroAtWall_(coeffDict_.getOrDefault<Switch>("epsilonZeroAtWall", true)),
 
-    nCorrNu_(coeffDict_.getOrDefault<label>("nInternalCorrectors", 1)),
-
     transportProperties_
     (
         IOobject
@@ -540,7 +510,36 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
     // lowest apparent viscosity value
     nu0_("nu0", dimViscosity, HerschelBulkleyCoeffs_),
 
-    m_("m", dimless, HerschelBulkleyCoeffs_)
+    m_("m", dimless, HerschelBulkleyCoeffs_),
+
+    nCorrNu_(coeffDict_.getOrDefault<label>("nInternalCorrectors", 3)),
+
+    etta_
+    (
+        IOobject
+        (
+            "nu",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        mesh_,
+        Kind_
+    ),
+
+    epsw_
+    (
+        IOobject
+        (
+            IOobject::groupName("epsw", alphaRhoPhi.group()),
+            runTime_.timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        2.0*etta_*magSqr(fvc::grad(sqrt(k_)))
+    )
 
 {
     bound(k_, kMin_);
@@ -552,12 +551,6 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
     {
         printCoeffs(type);
 
-        Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
-        Info << "n = " << n_ << endl;
-        Info << "tau0 = " << tau0_ << endl;
-        Info << "m = " << m_ << endl;
-
-
         if (!epsilonZeroAtWall_)
         {
             Info << "\n\nEpsilon not being solved with zeroed BC!" << endl;
@@ -567,6 +560,13 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
         {
             Info << "\nNon-Newtonian modeling turned off in the strain-rate and all PDEs!" << endl;
             Info << "NNFlag  = " << NNFlag_ << endl;
+        }
+        else
+        {
+            Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
+            Info << "n = " << n_ << endl;
+            Info << "tau0 = " << tau0_ << endl;
+            Info << "m = " << m_ << endl;
         }
     }
 

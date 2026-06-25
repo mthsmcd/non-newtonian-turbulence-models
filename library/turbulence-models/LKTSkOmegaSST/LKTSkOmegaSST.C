@@ -138,21 +138,20 @@ tmp<volScalarField> LKTSkOmegaSST::GbyNu
 
 void LKTSkOmegaSST::correctApparentViscosity()
 {
-    Info << "Updating apparent viscosity etta" << endl;
     volScalarField etta0 = etta_;
     for (int i = 0; i < nCorrNu_; ++i)
     {
         correctApparentViscosity(calcEtta(strainRate()));
     }
 
-    Info << "Etta residual after " << nCorrNu_ << " iterations = " << sum(mag(etta_ - etta0)).value() << endl;
+    Info << "Nu residual after " << nCorrNu_ << " iterations = " << sum(mag(etta_ - etta0)).value() << endl;
 
     if (tau0_.value() > 0.0)
     {
         dimensionedScalar tw = wallFriction();
         Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
     }
-    Info << "Average apparent viscosity etta = " << gAverage(etta_) << endl;
+    Info << "Average apparent viscosity nu = " << gAverage(etta_) << endl;
 }
 
 void LKTSkOmegaSST::correctNuNN()
@@ -362,7 +361,6 @@ LKTSkOmegaSST::LKTSkOmegaSST
         )
     ),
 
-
     Cflag_
     (
         NNFlag_.operator bool()
@@ -498,22 +496,6 @@ LKTSkOmegaSST::LKTSkOmegaSST
         )
     ),
 
-    etta_
-    (
-        IOobject
-        (
-            "nu",
-            runTime_.timeName(),
-            mesh_,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_,
-        Kind_
-    ),
-
-    ettaMin_(dimensionedScalar("ettaMin", dimViscosity, SMALL)),
-
     nuNN_
     (
         IOobject
@@ -588,7 +570,7 @@ LKTSkOmegaSST::LKTSkOmegaSST
         )
     ),
 
-    nCorrNu_(coeffDict_.getOrDefault<label>("nInternalCorrectors", 1)),
+    nCorrNu_(coeffDict_.getOrDefault<label>("nInternalCorrectors", 3)),
 
     transportProperties_
     (
@@ -621,6 +603,22 @@ LKTSkOmegaSST::LKTSkOmegaSST
 
     m_("m", dimless, HerschelBulkleyCoeffs_),
 
+    etta_
+    (
+        IOobject
+        (
+            "nu",
+            runTime_.timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        mesh_,
+        Kind_
+    ),
+
+    ettaMin_(dimensionedScalar("ettaMin", dimViscosity, SMALL)),
+
     Fe_("Fe", 0.5*tanh(8.0*(n_ - 0.75)) + 0.5),
 
     Ce_("Ce", Ce1_*Fe_ + Ce2_*(1.0 - Fe_))
@@ -636,15 +634,17 @@ LKTSkOmegaSST::LKTSkOmegaSST
     {
         printCoeffs(type);
 
-        Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
-        Info << "n = " << n_ << endl;
-        Info << "tau0 = " << tau0_ << endl;
-        Info << "m = " << m_ << endl;
-
         if (!NNFlag_)
         {
             Info << "\nNon-Newtonian modeling turned off in the strain-rate and all PDEs!" << endl;
             Info << "NNFlag  = " << NNFlag_ << endl;
+        }
+        else
+        {
+            Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
+            Info << "n = " << n_ << endl;
+            Info << "tau0 = " << tau0_ << endl;
+            Info << "m = " << m_ << endl;
         }
     }
 }
@@ -769,7 +769,6 @@ void LKTSkOmegaSST::correct()
     const volScalarField gamma(this->gamma(F1));
     const volScalarField beta(this->beta(F1));
 
-
     volScalarField sr("sr", strainRate());
 
     // non-Newtonian additional viscosity for the k equation
@@ -826,9 +825,13 @@ void LKTSkOmegaSST::correct()
     fvOptions.correct(k_);
     bound(k_, kMin_);
 
-    correctApparentViscosity();
     correctNut();
-    correctNuNN();
+    if (NNFlag_)
+    {
+        correctApparentViscosity();
+        correctNuNN();
+    }
+
 }
 
 Foam::tmp<Foam::fvVectorMatrix>

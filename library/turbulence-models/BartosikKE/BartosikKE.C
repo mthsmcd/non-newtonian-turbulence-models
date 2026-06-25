@@ -53,7 +53,12 @@ addToRunTimeSelectionTable(RASModel, BartosikKE, dictionary);
 
 tmp<volScalarField> BartosikKE::fMu(const dimensionedScalar& tauw) const
 {
-    return exp(-3.4*(1 + tau0_/tauw)/sqr(scalar(1) + sqr(k_)/(etta_*epsilon_)/50.0));;
+    dimensionedScalar xi(xi_);
+    if (xi.value() == 0.0)
+    {
+        xi = tau0_/tauw;
+    }
+    return exp(-3.4*(1 + xi)/sqr(scalar(1) + sqr(k_)/(etta_*epsilon_)/50.0));;
 }
 
 tmp<volScalarField> BartosikKE::f2() const
@@ -78,13 +83,6 @@ void BartosikKE::correctApparentViscosity(const dimensionedScalar& etta)
 
 dimensionedScalar BartosikKE::wallFriction() const
 {
-    // if tauw is specified on the coeffDict, it won't be calculated
-    if (tauw_.value() != 0.0)
-    {
-        return tauw_;
-    }
-
-    // if not specified :
     volScalarField shearMag("shearMag",
                             sqrt(2.0)*mag(symm(fvc::grad(U_)))
                             );
@@ -148,7 +146,13 @@ dimensionedScalar BartosikKE::calcEtta(const dimensionedScalar& tauw) const
 {
     dimensionedScalar tone("tone", dimViscosity/tauw.dimensions(), 1.0);
     dimensionedScalar rtone("rtone", tauw.dimensions()/Kind_.dimensions(), 1.0);
-    return tauw * tone * pow(rtone*Kind_/(tauw - tau0_), 1.0/n_);
+
+    dimensionedScalar tw(tauw);
+    if (xi_.value() > 0.0)
+    {
+        tw = tau0_/xi_;
+    }
+    return tw * tone * pow(rtone*Kind_/(tw - tau0_), 1.0/n_);
 }
 
 
@@ -165,15 +169,13 @@ void BartosikKE::correctApparentViscosity()
     dimensionedScalar tw = wallFriction();
     correctApparentViscosity(calcEtta(tw));
 
-    if (tauw_.value() != 0.0)
+    if (xi_.value() != 0.0)
     {
-        Info << "Fixed yield stress ratio tau0/tauw = " << tau0_.value()/tauw_.value() << endl;
+        Info << "Imposed yield stress ratio xi = " << xi_.value() << endl;
     }
-    else
-    {
-        Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
-    }
-    Info << "Average apparent viscosity etta = " << gAverage(etta_) << endl;
+    Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
+
+    Info << "Apparent viscosity etta = " << gAverage(etta_) << endl;
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -314,13 +316,13 @@ BartosikKE::BartosikKE
     // yield stress
     tau0_("tau0", dimViscosity/dimTime, HerschelBulkleyCoeffs_),
 
-    tauw_
+    xi_
     (
         dimensioned<scalar>::getOrAddToDict
         (
-            "tauw",
-            coeffDict_,
-            tau0_.dimensions(),
+            "xi",
+            HerschelBulkleyCoeffs_,
+            dimless,
             0.0
         )
     ),
@@ -351,14 +353,13 @@ BartosikKE::BartosikKE
         Info << "n = " << n_ << endl;
         Info << "tau0 = " << tau0_ << endl;
 
-        if (tauw_.value() == 0.0)
+        if (xi_.value() == 0.0)
         {
-            Info << "tauw value not specified, will be calculated iteratively!" << endl;
+            Info << "Yield stress ratio xi not specified, will be calculated iteratively!" << endl;
         }
         else
         {
-            Info << "Specified tauw = " << tauw_.value() << endl;
-            Info<< "Fixed yield stress ratio = " << tauw_.value()/tau0_.value() << endl;
+            Info << "Specified xi = " << xi_.value() << endl;
         }
     }
 }
@@ -380,7 +381,7 @@ bool BartosikKE::read()
         HerschelBulkleyCoeffs_.readEntry("k", Kind_);
         HerschelBulkleyCoeffs_.readEntry("n", n_);
         HerschelBulkleyCoeffs_.readEntry("tau0", tau0_);
-        tauw_.readIfPresent(coeffDict());
+        HerschelBulkleyCoeffs_.readEntry("xi", xi_);
 
         return true;
     }

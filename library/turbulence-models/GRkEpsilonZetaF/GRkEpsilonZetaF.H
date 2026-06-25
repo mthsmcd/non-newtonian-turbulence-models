@@ -132,17 +132,11 @@ protected:
 
         // Fields
 
-            //- Apparent viscosity
-            volScalarField  etta_;
-
             //- Turbulent kinetic energy [m2/s2]
             volScalarField k_;
 
             //- Turbulent kinetic energy dissipation rate [m2/s3]
             volScalarField epsilon_;
-
-            //- Near wall epsilon
-            volScalarField epsw_;
 
             //- Normalised wall-normal fluctuating velocity scale [-]
             volScalarField zeta_;
@@ -156,7 +150,6 @@ protected:
             //- non-Newtonian viscosity
             volScalarField nuNN_;
 
-
         // Bounding values
 
             dimensionedScalar zetaMin_;
@@ -169,9 +162,6 @@ protected:
             // standard is true.
             Switch epsilonZeroAtWall_;
 
-            // number of internal nu calculations per iteration
-            label nCorrNu_;
-
             // Herschel Bulkley variables
             IOdictionary transportProperties_;
             dictionary HerschelBulkleyCoeffs_;
@@ -180,6 +170,15 @@ protected:
             dimensionedScalar tau0_;
             dimensionedScalar nu0_;
             dimensionedScalar m_;
+
+            // number of internal nu calculations per iteration
+            label nCorrNu_;
+
+            //- Apparent viscosity
+            volScalarField  etta_;
+
+            //- Near wall epsilon
+            volScalarField epsw_;
 
     // Protected Member Functions
 
