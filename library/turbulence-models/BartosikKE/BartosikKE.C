@@ -361,6 +361,38 @@ BartosikKE::BartosikKE
         {
             Info << "Specified xi = " << xi_.value() << endl;
         }
+        if (n_.value() == 1.0 && tau0_.value() == 0.0)
+        {
+            Info << "\nNewtonian fluid being used in the simulation!" << endl;
+        }
+    }
+
+    if
+    (
+        Kind_.value() < 0.0
+        || tau0_.value() < 0.0
+        || n_.value() < 0.0
+        || xi_.value() < 0.0
+    )
+    {
+        FatalErrorInFunction
+            << "Negative value used for K, tau0, n or xi:" << nl
+            << "K = " << Kind_.value() << nl
+            << "tau0 = " << tau0_.value() << nl
+            << "n = " << n_.value() << nl
+            << "xi = " << xi_.value() << nl
+            << exit(FatalError);
+    }
+
+    if
+    (
+        mag(sigmaEps_.value()) < VSMALL
+    )
+    {
+        FatalErrorInFunction
+            << "Non-zero values are required for the model constants:" << nl
+            << "sigmaEps = " << sigmaEps_ << nl
+            << exit(FatalError);
     }
 }
 

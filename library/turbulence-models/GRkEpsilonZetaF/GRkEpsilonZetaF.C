@@ -178,13 +178,19 @@ tmp<volScalarField> GRkEpsilonZetaF::dNudG(const volScalarField& sr) const
     dimensionedScalar tone("tone", dimless/sr.dimensions(), 1.0);
     dimensionedScalar rtone("rtone", dimless/dimTime, 1.0);
 
-    if (NNFlag_)
+    if (!NNFlag_)
+    {
+        dimensionedScalar tzero ("tzero", dimViscosity/sqr(sr.dimensions()), 0.0);
+        return tzero*sr;
+    }
+
+    if (m_.value() > 0.0)
     {
         return (-tau0_*(1.0 - exp(-m_*tone*sr)) + m_*sr*tone*tau0_*exp(-m_*tone*sr) + (n_ - 1.0)*Kind_*rtone*pow(tone*sr, n_))/max(sqr(sr), dimensionedScalar("SMALL", sqr(sr.dimensions()), SMALL));
     }
 
-    dimensionedScalar tzero ("tzero", dimViscosity/sqr(sr.dimensions()), 0.0);
-    return tzero*sr;
+    return (-tau0_  + (n_ - 1.0)*Kind_*rtone*pow(tone*sr, n_))/max(sqr(sr), dimensionedScalar("SMALL", sqr(sr.dimensions()), SMALL));
+
 }
 
 
@@ -204,19 +210,21 @@ tmp<volScalarField> GRkEpsilonZetaF::strainRate() const
     return sqrt(2.0*magSqr(symm(fvc::grad(U_))));
 }
 
-
 tmp<volScalarField> GRkEpsilonZetaF::calcEtta(const volScalarField& sr) const
 {
 
     dimensionedScalar tone("tone", dimless/sr.dimensions(), 1.0);
     dimensionedScalar rtone("rtone", dimless/dimTime, 1.0);
 
-    return min
-    (
-        nu0_,
-        (tau0_ + Kind_*rtone*pow(tone*sr, n_))
-        /max(sr, dimensionedScalar ("SMALL", sr.dimensions(), SMALL))
-    );
+    if (m_.value() > 0.0)
+    {
+        (1.0 - exp(-m_*tone*sr))*(tau0_ + Kind_*rtone*pow(tone*sr, n_))
+        /max(sr, dimensionedScalar ("SMALL", sr.dimensions(), SMALL));
+    }
+
+    return (tau0_ + Kind_*rtone*pow(tone*sr, n_))
+           /max(sr, dimensionedScalar ("SMALL", sr.dimensions(), SMALL));
+
 }
 
 tmp<volScalarField> GRkEpsilonZetaF::calcNuNN(const volScalarField& sr) const
@@ -390,8 +398,6 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
         )
     ),
 
-    NNFlag_(coeffDict_.getOrDefault<Switch>("NNFlag", true)),
-
     k_
     (
         IOobject
@@ -507,10 +513,9 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
     // yield stress
     tau0_("tau0", dimViscosity/dimTime, HerschelBulkleyCoeffs_),
 
-    // lowest apparent viscosity value
-    nu0_("nu0", dimViscosity, HerschelBulkleyCoeffs_),
+    m_(HerschelBulkleyCoeffs_.getOrDefault<label>("m", 0.0)),
 
-    m_("m", dimless, HerschelBulkleyCoeffs_),
+    NNFlag_(true),
 
     nCorrNu_(coeffDict_.getOrDefault<label>("nInternalCorrectors", 3)),
 
@@ -556,18 +561,42 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
             Info << "\n\nEpsilon not being solved with zeroed BC!" << endl;
         }
 
-        if (!NNFlag_)
+        Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
+        Info << "n = " << n_ << endl;
+        Info << "tau0 = " << tau0_ << endl;
+
+        if(m_.value() == 0.0)
         {
-            Info << "\nNon-Newtonian modeling turned off in the strain-rate and all PDEs!" << endl;
-            Info << "NNFlag  = " << NNFlag_ << endl;
+            Info << "Papanastasiou regularization turned off." << endl;
         }
         else
         {
-            Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
-            Info << "n = " << n_ << endl;
-            Info << "tau0 = " << tau0_ << endl;
-            Info << "m = " << m_ << endl;
+            Info << "Papanastasiou regularization turned on with m = " << m_.value() << endl;
         }
+
+        if (n_.value() == 1.0 && tau0_.value() == 0.0)
+        {
+            NNFlag_ = false;
+            Info << "\nNewtonian fluid being used in the simulation" << endl;
+            Info << "Non-Newtonian modeling turned off!" << endl;
+        }
+    }
+
+    if
+    (
+        Kind_.value() < 0.0
+        || tau0_.value() < 0.0
+        || n_.value() < 0.0
+        || m_.value() < 0.0
+    )
+    {
+        FatalErrorInFunction
+            << "Negative value used for K, tau0, n or m:" << nl
+            << "K = " << Kind_.value() << nl
+            << "tau0 = " << tau0_.value() << nl
+            << "n = " << n_.value() << nl
+            << "m = " << m_.value() << nl
+            << exit(FatalError);
     }
 
     if
@@ -608,7 +637,6 @@ bool GRkEpsilonZetaF::read()
         Cn_.readIfPresent(coeffDict());
         Cepsn_.readIfPresent(coeffDict());
 
-        NNFlag_.readIfPresent("NNFlag", coeffDict());
         epsilonZeroAtWall_.readIfPresent("epsilonZeroAtWall", coeffDict());
 
         return true;
@@ -639,6 +667,9 @@ void GRkEpsilonZetaF::correct()
         epsw_ = 2.0*this->etta_*magSqr(fvc::grad(sqrt(k_)));
     }
 
+    // f at wall vicinity
+    volScalarField fw("fw", 2.0*this->etta_*magSqr(fvc::grad(sqrt(zeta_))));
+
     T_ = Ts();
     bound(T_, TMin_);
     const volScalarField L2(type() + "L2", sqr(Ls()) + L2Min_);
@@ -653,17 +684,23 @@ void GRkEpsilonZetaF::correct()
     // Push any changed cell values to coupled neighbours
     epsilon_.boundaryFieldRef().template evaluateCoupled<coupledFvPatch>();
 
-    volScalarField sr("sr", strainRate());
-
+    // non-Newtonian additional terms
+    // initialized with zeros and updated if NNFlag
+    dimensionedScalar tzero ("tzero", dimless, Zero);
     // non-Newtonian additional viscosity for the k equation
-    volScalarField DNNu("DNNu",Cn_*dNudG(sr)*2.0*magSqr(tS())/max(sr, dimensionedScalar("SMALL", sr.dimensions(), SMALL)));
+    volScalarField DNNu("DNNu", tzero*etta_);
     // non-Newtonian D term (explicit)
-    volScalarField DN("DN",fvc::laplacian(DNNu, k_));
+    volScalarField DN("DN", tzero*G);
     // non-Newtonian gamma term
-    volScalarField GN("GN", -2.0*nuNN_*magSqr(tS()));
+    volScalarField GN("GN", tzero*G);
 
-    // f at wall vicinity
-    volScalarField fw("fw", 2.0*this->etta_*magSqr(fvc::grad(sqrt(zeta_))));
+    if (NNFlag_)
+    {
+        volScalarField sr("sr", strainRate());
+        DNNu = Cn_*dNudG(sr)*2.0*magSqr(tS())/max(sr, dimensionedScalar("SMALL", sr.dimensions(), SMALL));
+        DN = fvc::laplacian(DNNu, k_);
+        GN = -2.0*nuNN_*magSqr(tS());
+    }
 
     //- epsilon equation corrector to solve with zero BC
     volScalarField E
@@ -677,7 +714,7 @@ void GRkEpsilonZetaF::correct()
             IOobject::NO_WRITE
         ),
         mesh_,
-        dimensionedScalar(epsilon_.dimensions()/T_.dimensions(), Zero)
+        dimensionedScalar(epsilon_.dimensions()/dimTime, Zero)
     );
     if (epsilonZeroAtWall_)
     {
@@ -726,7 +763,6 @@ void GRkEpsilonZetaF::correct()
     solve(kEqn);
     fvOptions.correct(k_);
     bound(k_, kMin_);
-
 
     // Elliptic relaxation function equation
     // All source terms are non-negative functions

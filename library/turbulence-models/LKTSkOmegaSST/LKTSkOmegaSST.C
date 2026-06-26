@@ -230,7 +230,20 @@ tmp<volScalarField> LKTSkOmegaSST::dNudG(const volScalarField& sr) const
 {
     dimensionedScalar tone("tone", dimless/sr.dimensions(), 1.0);
     dimensionedScalar rtone("rtone", dimless/dimTime, 1.0);
-    return Cflag_*(-tau0_*(1.0 - exp(-m_*tone*sr)) + m_*sr*tone*tau0_*exp(-m_*tone*sr) + (n_ - 1.0)*Kind_*rtone*pow(tone*sr, n_))/max(sqr(sr), dimensionedScalar("SMALL", sqr(sr.dimensions()), SMALL));
+
+    if (!NNFlag_)
+    {
+        dimensionedScalar tzero ("tzero", dimViscosity/sqr(sr.dimensions()), 0.0);
+        return tzero*sr;
+    }
+
+    if (m_.value() > 0.0)
+    {
+        return (-tau0_*(1.0 - exp(-m_*tone*sr)) + m_*sr*tone*tau0_*exp(-m_*tone*sr) + (n_ - 1.0)*Kind_*rtone*pow(tone*sr, n_))/max(sqr(sr), dimensionedScalar("SMALL", sqr(sr.dimensions()), SMALL));
+    }
+
+    return (-tau0_  + (n_ - 1.0)*Kind_*rtone*pow(tone*sr, n_))/max(sqr(sr), dimensionedScalar("SMALL", sqr(sr.dimensions()), SMALL));
+
 }
 
 
@@ -243,7 +256,11 @@ void LKTSkOmegaSST::correctApparentViscosity(const volScalarField& etta)
 
 tmp<volScalarField> LKTSkOmegaSST::strainRate() const
 {
-    return sqrt(2.0*magSqr(symm(fvc::grad(U_))) + Cflag_*Cbeta_*epsilon()/etta_);
+    if (NNFlag_)
+    {
+        return sqrt(2.0*magSqr(symm(fvc::grad(U_))) + Cbeta_*epsilon()/etta_);
+    }
+    return sqrt(2.0*magSqr(symm(fvc::grad(U_))));
 }
 
 tmp<volScalarField> LKTSkOmegaSST::calcEtta(const volScalarField& sr) const
@@ -252,17 +269,20 @@ tmp<volScalarField> LKTSkOmegaSST::calcEtta(const volScalarField& sr) const
     dimensionedScalar tone("tone", dimless/sr.dimensions(), 1.0);
     dimensionedScalar rtone("rtone", dimless/dimTime, 1.0);
 
-    return min
-    (
-        nu0_,
-        (tau0_ + Kind_*rtone*pow(tone*sr, n_))
-        /max(sr, dimensionedScalar ("SMALL", sr.dimensions(), SMALL))
-    );
+    if (m_.value() > 0.0)
+    {
+        (1.0 - exp(-m_*tone*sr))*(tau0_ + Kind_*rtone*pow(tone*sr, n_))
+        /max(sr, dimensionedScalar ("SMALL", sr.dimensions(), SMALL));
+    }
+
+    return (tau0_ + Kind_*rtone*pow(tone*sr, n_))
+           /max(sr, dimensionedScalar ("SMALL", sr.dimensions(), SMALL));
+
 }
 
 tmp<volScalarField> LKTSkOmegaSST::calcNuNN(const volScalarField& sr) const
 {
-    return Cflag_*Cbeta_*dNudG(sr)*epsilon()/max(sr*etta_, dimensionedScalar("SMALL", sr.dimensions()*etta_.dimensions(), SMALL));
+    return Cbeta_*dNudG(sr)*epsilon()/max(sr*etta_, dimensionedScalar("SMALL", sr.dimensions()*etta_.dimensions(), SMALL));
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -349,21 +369,6 @@ LKTSkOmegaSST::LKTSkOmegaSST
             coeffDict_,
             0.6
         )
-    ),
-
-    NNFlag_
-    (
-        Switch::getOrAddToDict
-        (
-            "NNFlag",
-            coeffDict_,
-            true
-        )
-    ),
-
-    Cflag_
-    (
-        NNFlag_.operator bool()
     ),
 
     alphaK1_
@@ -598,10 +603,9 @@ LKTSkOmegaSST::LKTSkOmegaSST
     // yield stress
     tau0_("tau0", dimViscosity/dimTime, HerschelBulkleyCoeffs_),
 
-    // lowest apparent viscosity value
-    nu0_("nu0", dimViscosity, HerschelBulkleyCoeffs_),
+    m_(HerschelBulkleyCoeffs_.getOrDefault<label>("m", 0.0)),
 
-    m_("m", dimless, HerschelBulkleyCoeffs_),
+    NNFlag_(true),
 
     etta_
     (
@@ -634,18 +638,42 @@ LKTSkOmegaSST::LKTSkOmegaSST
     {
         printCoeffs(type);
 
-        if (!NNFlag_)
+        Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
+        Info << "n = " << n_ << endl;
+        Info << "tau0 = " << tau0_ << endl;
+
+        if(m_.value() == 0.0)
         {
-            Info << "\nNon-Newtonian modeling turned off in the strain-rate and all PDEs!" << endl;
-            Info << "NNFlag  = " << NNFlag_ << endl;
+            Info << "Papanastasiou regularization turned off." << endl;
         }
         else
         {
-            Info << "Herschel-Bulkley parameters\n" << "K = " << Kind_ << endl;
-            Info << "n = " << n_ << endl;
-            Info << "tau0 = " << tau0_ << endl;
-            Info << "m = " << m_ << endl;
+            Info << "Papanastasiou regularization turned on with m = " << m_.value() << endl;
         }
+
+        if (n_.value() == 1.0 && tau0_.value() == 0.0)
+        {
+            NNFlag_ = false;
+            Info << "\nNewtonian fluid being used in the simulation" << endl;
+            Info << "Non-Newtonian modeling turned off!" << endl;
+        }
+    }
+
+    if
+    (
+        Kind_.value() < 0.0
+        || tau0_.value() < 0.0
+        || n_.value() < 0.0
+        || m_.value() < 0.0
+    )
+    {
+        FatalErrorInFunction
+            << "Negative value used for K, tau0, n or m:" << nl
+            << "K = " << Kind_.value() << nl
+            << "tau0 = " << tau0_.value() << nl
+            << "n = " << n_.value() << nl
+            << "m = " << m_.value() << nl
+            << exit(FatalError);
     }
 }
 
@@ -700,8 +728,6 @@ bool LKTSkOmegaSST::read()
         Ctau_.readIfPresent(coeffDict());
         Cd_.readIfPresent(coeffDict());
         Cg_.readIfPresent(coeffDict());
-
-        NNFlag_.readIfPresent("NNFlag", coeffDict());
 
         return true;
     }
@@ -769,17 +795,26 @@ void LKTSkOmegaSST::correct()
     const volScalarField gamma(this->gamma(F1));
     const volScalarField beta(this->beta(F1));
 
-    volScalarField sr("sr", strainRate());
-
+    // non-Newtonian additional terms
+    // initialized with zeros and updated if NNFlag
+    dimensionedScalar tzero ("tzero", dimless, Zero);
     // non-Newtonian additional viscosity for the k equation
-    volScalarField DNNu("DNNu",Cd_*dNudG(sr)*S2/max(sr, dimensionedScalar("SMALL", sr.dimensions(), SMALL)));
-    // non-Newtonian DN term (explicit)
-    volScalarField DN("DN",fvc::laplacian(DNNu, k_));
+    volScalarField DNNu("DNNu", tzero*etta_);
+    // non-Newtonian D term (explicit)
+    volScalarField DN("DN", tzero*G);
     // non-Newtonian gamma term
-    volScalarField GN("GN", -Cg_*nuNN*S2);
-
+    volScalarField GN("GN", tzero*G);
     //non-Newtonian E term
-    volScalarField EN("EN", Ce_*(DN + GN)/nut);
+    volScalarField EN("EN", tzero*G/nut);
+
+    if (NNFlag_)
+    {
+        volScalarField sr("sr", strainRate());
+        DNNu = Cd_*dNudG(sr)*S2/max(sr, dimensionedScalar("SMALL", sr.dimensions(), SMALL));
+        DN = fvc::laplacian(DNNu, k_);
+        GN = -Cg_*nuNN*S2;
+        EN = Ce_*(DN + GN)/nut;
+    }
 
     // Turbulent frequency equation
     tmp<fvScalarMatrix> omegaEqn

@@ -127,9 +127,6 @@ protected:
             dimensionedScalar Cn_;
             dimensionedScalar Cepsn_;
 
-        // flag controling if the non-Newtonian part is being solved
-            Switch NNFlag_;
-
         // Fields
 
             //- Turbulent kinetic energy [m2/s2]
@@ -168,8 +165,11 @@ protected:
             dimensionedScalar Kind_;
             dimensionedScalar n_;
             dimensionedScalar tau0_;
-            dimensionedScalar nu0_;
             dimensionedScalar m_;
+
+            // flag controling if the non-Newtonian part is being solved
+            // will be off in n = 1 and tau0 = 0.0
+            Switch NNFlag_;
 
             // number of internal nu calculations per iteration
             label nCorrNu_;

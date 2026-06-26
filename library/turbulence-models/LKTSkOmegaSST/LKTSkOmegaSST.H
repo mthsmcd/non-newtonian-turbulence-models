@@ -118,10 +118,6 @@ protected:
             dimensionedScalar Cd_;
             dimensionedScalar Cg_;
 
-            // flag and associated constant to turn off non-Newtonian modeling
-            Switch NNFlag_;
-            dimensionedScalar Cflag_;
-
         // non-Newtonian blending function
 
         // Model coefficients
@@ -180,8 +176,8 @@ protected:
             dimensionedScalar Kind_;
             dimensionedScalar n_;
             dimensionedScalar tau0_;
-            dimensionedScalar nu0_;
             dimensionedScalar m_;
+            Switch NNFlag_;
 
             //- Apparent viscosity
             volScalarField  etta_;
