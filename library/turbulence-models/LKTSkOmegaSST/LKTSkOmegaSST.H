@@ -178,6 +178,7 @@ protected:
             dimensionedScalar tau0_;
             dimensionedScalar m_;
             Switch NNFlag_;
+            Switch printXi_;
 
             //- Apparent viscosity
             volScalarField  etta_;

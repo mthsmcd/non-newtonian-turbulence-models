@@ -11,18 +11,54 @@ FoamFile
     version         2;
     format          ascii;
     class           dictionary;
-    location        "constant";
-    object          turbulenceProperties;
+    location        "system";
+    object          fvSolution;
 }
 
-simulationType  RAS;
-
-RAS
+solvers
 {
-    RASModel        BartosikKE; 	
-	turbulence      on;
-    printCoeffs     on;
-	
-	nInternalCorrectors		3;
+    p
+    {
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-7;
+        relTol          1e-2;
+		maxIter			5;
+    }
+    "(U|k|epsilon|f|zeta|omega)"
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-7;
+        relTol          1e-3;
+    }
 }
+
+SIMPLE
+{
+	nNonOrthogonalCorrectors 0;
+    consistent      yes;
+    pRefValue       0;
+	pRefCell		0;
+    residualControl
+    {
+		Uz              			1e-6;
+        "(k|epsilon|f|omega|zeta)" 	1e-6; 
+    }
+}
+
+relaxationFactors
+{
+    fields
+    {
+        p               			0.8;
+    }
+    equations
+    {
+        U               			0.8;
+        "(k|epsilon|f|omega|zeta)" 	0.8;
+    }
+}
+
+
 // ************************************************************************* //

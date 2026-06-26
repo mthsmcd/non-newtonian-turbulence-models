@@ -5,24 +5,33 @@
 |   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 FoamFile
 {
-    version         2;
-    format          ascii;
-    class           dictionary;
-    location        "constant";
-    object          turbulenceProperties;
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       volScalarField;
+    location    "0";
+    object      zeta;
 }
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-simulationType  RAS;
+dimensions      [0 0 0 0 0 0 0];
 
-RAS
+internalField   uniform 0.66;
+
+boundaryField
 {
-    RASModel        BartosikKE; 	
-	turbulence      on;
-    printCoeffs     on;
-	
-	nInternalCorrectors		3;
+    "(inlet|outlet)"
+    {
+        type            cyclic;
+    }
+    walls
+    {
+        type            fixedValue;
+        value           uniform 1e-10;
+    }
 }
+
+
 // ************************************************************************* //

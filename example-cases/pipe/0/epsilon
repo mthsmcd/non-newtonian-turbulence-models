@@ -10,19 +10,27 @@ FoamFile
 {
     version         2;
     format          ascii;
-    class           dictionary;
-    location        "constant";
-    object          turbulenceProperties;
+    class           volScalarField;
+    location        "0";
+    object          epsilon;
 }
 
-simulationType  RAS;
+dimensions      [0 2 -3 0 0 0 0];
 
-RAS
+internalField   uniform 0.0000111803; 
+
+boundaryField
 {
-    RASModel        BartosikKE; 	
-	turbulence      on;
-    printCoeffs     on;
-	
-	nInternalCorrectors		3;
+    "(inlet|outlet)"
+    {
+        type        cyclic;
+    }
+    walls
+    {
+        type 		fixedValue;
+		value		uniform 1e-10;
+    }
 }
+
+
 // ************************************************************************* //

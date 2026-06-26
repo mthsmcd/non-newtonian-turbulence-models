@@ -12,17 +12,23 @@ FoamFile
     format          ascii;
     class           dictionary;
     location        "constant";
-    object          turbulenceProperties;
+    object          fvOptions;
 }
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-simulationType  RAS;
-
-RAS
+momentumSource
 {
-    RASModel        BartosikKE; 	
-	turbulence      on;
-    printCoeffs     on;
-	
-	nInternalCorrectors		3;
+    type            meanVelocityForce;
+    active          yes;
+
+    meanVelocityForceCoeffs
+    {
+        selectionMode   all;
+
+        fields      	(U);
+        Ubar            (0 0 2.272);
+    }
 }
+
+
 // ************************************************************************* //

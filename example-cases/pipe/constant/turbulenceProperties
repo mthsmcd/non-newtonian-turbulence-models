@@ -19,10 +19,8 @@ simulationType  RAS;
 
 RAS
 {
-    RASModel        BartosikKE; 	
+    RASModel        LKTSkOmegaSST;	
 	turbulence      on;
     printCoeffs     on;
-	
-	nInternalCorrectors		3;
 }
 // ************************************************************************* //

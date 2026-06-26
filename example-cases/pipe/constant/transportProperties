@@ -12,17 +12,19 @@ FoamFile
     format          ascii;
     class           dictionary;
     location        "constant";
-    object          turbulenceProperties;
+    object          transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+transportModel  RASHerschelBulkley;
+
+RASHerschelBulkleyCoeffs
+{										
+	k               0.0003315; 			
+	n              	1.0; 				
+	tau0            3.58e-3; 
+	nu0             1e-3;
+	//m				400;
 }
 
-simulationType  RAS;
-
-RAS
-{
-    RASModel        BartosikKE; 	
-	turbulence      on;
-    printCoeffs     on;
-	
-	nInternalCorrectors		3;
-}
 // ************************************************************************* //

@@ -5,23 +5,28 @@
 |   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 FoamFile
 {
-    version         2;
-    format          ascii;
-    class           volScalarField;
-    location        "0";
-    object          nu;
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       volScalarField;
+    location    "24528";
+    object      nu;
 }
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [ 0 2 -1 0 0 0 0 ];
+dimensions      [0 2 -1 0 0 0 0];
 
-internalField   uniform 0.000315;
+internalField   uniform 0.0003315;
 
 boundaryField
 {
-    "(inlet|outlet)"
+    inlet
+    {
+        type            cyclic;
+    }
+    outlet
     {
         type            cyclic;
     }
@@ -32,7 +37,7 @@ boundaryField
     lowerWall
     {
         type            calculated;
-        value           $internalField;
+        value           uniform 0.0003315;
     }
     frontAndBack
     {

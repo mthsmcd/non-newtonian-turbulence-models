@@ -78,8 +78,8 @@ RASHerschelBulkley
   // yield stress
   tau0  <value>; 
   
-  // papanastasiou regularization parameter
-  // only required in GRkEpsilonZetaF and LKTSkOmegaSST models
+  // optional, papanastasiou regularization parameter
+  // only used in GRkEpsilonZetaF and LKTSkOmegaSST models
   m     <value>;
   
   // maximum viscosity of bi-viscosity regularization
@@ -113,28 +113,24 @@ Simulating with a Newtonian fluid will reduce all models to their baseline [Newt
 Proposed in **Malin (1998)**, it is a low-Reynolds (Re) $k$ - $\varepsilon$ model for Herschel-Bulkley fluids
 based on the Newtonian model of **Lam & Bremhorst (1981)**.
 
-Best suited for PL, transformed the damping function $f_\mu$ into a function of `n`.
-Requires the definition of a maximum regularizing viscosity `nu0` in `transportProperties`.
-
-Using this model with $n = 1$ and $\tau_0 > 0$ is equivalent to directly using the **Lam & Bremhorst (1981)** model 
-with a Bn rheology.
-
-Implemented upon OpenFOAM `LamBremhorstKE` model.
+- Best suited for PL, transformed the damping function $f_\mu$ into a function of `n`.
+- Requires the definition of a maximum regularizing viscosity `nu0` in `transportProperties`.
+- Implemented upon OpenFOAM `LamBremhorstKE` model.
+- Using this model with $n = 1$ and $\tau_0 > 0$ is equivalent to directly using the **Lam & Bremhorst (1981)** model
+    with a Bn rheology.
 
 #### 2. `BartosikKE`
 
 Proposed in **Bartosik (2010)**, it is a low-Re $k$ - $\varepsilon$ model for Herschel-Bulkley fluids
 based on the Newtonian model of **Launder & Sharma (1974)**.
 
-Best suited for Bn, transformed the damping function $f_\mu$ into a function of `xi`, the ratio of the yield stress to the wall shear stress
+- Best suited for Bn, transformed the damping function $f_\mu$ into a function of `xi`, the ratio of the yield stress to the wall shear stress
 (_i.e._ $\xi = \tau_0 / \tau_w$).
-`xi` may be calculated iteratively or a fixed value may be imposed at `transportProperties`.
-It imposes a constant $\nu$ equal to the value at the wall.
-
-Using this model with $n \neq 1$ and $\tau_0 = 0$ is equivalent to directly using the **Launder & Sharma (1974)** 
+- `xi` may be calculated iteratively or a fixed value may be imposed at `transportProperties`.
+- It imposes a constant $\nu$ equal to the value at the wall.
+- Implemented upon OpenFOAM `LaunderSharmaKE` model.
+- Using this model with $n \neq 1$ and $\tau_0 = 0$ is equivalent to directly using the **Launder & Sharma (1974)** 
 model with a PL rheology.
-
-Implemented upon OpenFOAM `LaunderSharmaKE` model.
 
 #### 3. `GRkEpsilonZetaF`
 
@@ -142,29 +138,35 @@ Proposed in **Gavrilov & Rudyak (2016)**, it is a four equation low-Re $k$ - $\v
 originally proposed for PL fluids, but which can also be extended to HB.
 It is based on the Newtonian model of **Hanjalić, Popovac & Hadžiabdić (2004)**.
 
-Best suited for PL.
-Requires the definition of a regularizing parameter `m` in `transportProperties`.
-
-OpenFOAM does not dispose of the baseline Newtonian $k$ - $\varepsilon$ - $\zeta$ - $f$, 
-it instead has the `kEpsilonPhitF` model, which is very similar and was used as the departing point 
-for this implementation.
+- Best suited for PL.
+- Has a control parameter `nInternalCorrectors` that can be defined in `turbulenceProperties`
+  and defines how many inner loops are used to compute $\nu$.
+  Default value is 3.
+- Has a boolean control parameter `printYieldStressRatio` which determines if the solver will compute the wall
+shear stress at every iteration and print $\xi = \tau_0 / \tau_w$.
+- Has an optional regularizing parameter `m` in `transportProperties` for Papanastasiou's regularization, if not defined
+no regularization is imposed as, in most cases, it is not required.
+- OpenFOAM does not dispose of the baseline Newtonian $k$ - $\varepsilon$ - $\zeta$ - $f$,
+    it instead has the `kEpsilonPhitF` model, which is very similar and was used as the departing point
+    for this implementation.
 
 #### 4. `LKTSkOmegaSST`
 
 Proposed in **Lovato *et al.* (2022)**, a $k$ - $\omega$ SST model for Herschel-Bulkley fluids
 based on the Newtonian model of **Menter (1994)**.
 
-Best suited for Bn and HB.
-Requires the definition of a regularizing parameter `m` in `transportProperties`.
+- Best suited for Bn and HB.
+- Also has the `nInternalCorrectors` and `printYieldStressRatio` control parameters, with the same defaults.
+- Also has the optional regularizing Papanastasiou parameter `m`.
 
-Implemented upon OpenFOAM `kOmegaSST` model, with corrections to issues pointed by 
+- Implemented upon OpenFOAM `kOmegaSST` model, with corrections to issues pointed by 
 the [Turbulence Modeling Resource webpage](https://tmbwg.github.io/turbmodels/openfoam_issues.html).
 
 ## Usage
 
 Usage is quite straightforward, once the `transportProperties` and `turbulenceProperties` dictionaries
 have been set up.
-Example files are contained within the [examples](example-cases).
+Example files are contained within the [examples folder](example-cases).
 
 All $k$ - $\varepsilon$ models solve these two quantities with fixed zeroed boundary conditions (BCs).
 The quantities $\zeta$ and $f$ of the `GRkEpsilonZetaF` model also employ zeroed BCs.
@@ -177,14 +179,15 @@ compatible with the `RASHerschelBulkley` transport model.
 
 #### Channel flow
 
-Simulations with $Re_\tau \approx 395$, the mesh contains 100 elements and can be modified in the `blockMeshDict` file.
+Simulations with $Re_\tau \approx 395$, the mesh contains 100 elements covering a single cross section
+and half the channel height, with $y^+_\text{min} \approx 0.5$.
 
 1. Newtonian with `MalinKE` and `BartosikKE`
 
 - `trasportProperties` setup
    - `n` $= 1$
    - `tau0` $= 0$
-   - `k` $= 0.0003315$
+   - `k` $= 3.315 \times 10^{-4}$
   
 - `fvOptions` setup
   - `Ubar` $= 2.3$ for `MalinKE`
@@ -209,14 +212,14 @@ demonstrated remarkably capable of converging anything.
 - `trasportProperties` setup
    - `n` $= 0.75$
    - `tau0` $= 0$
-   - `k` $= 0.0003315$
-   - `nu0` $= 1e-3$
+   - `k` $= 3.315 \times 10^{-4}$
+   - `nu0` $= 10^{-3}$
 
 - `fvOptions` setup
    - `Ubar` $= 1.085$
 
 - Solution contained in the folder
-   - `75.keM` for `MalinKE`
+   - `75.PL.keM` for `MalinKE`
 
 The maximum viscosity `nu0` corresponds to roughly 10 times the viscosity value at the wall.
 This bounding value should be adjusted accordingly to each case, but the results should be fairly independent to it
@@ -229,15 +232,15 @@ or from a PL case with a similar `n` value._
 
 - `trasportProperties` setup
    - `n` $= 0.75$
-   - `tau0` $= 1.01e-3$
-   - `k` $= 0.0003315$
+   - `tau0` $= 1.01 \times 10^{-3}$
+   - `k` $= 3.315 \times 10^{-4}$
    - `xi` $= 0.2$
 
 - `fvOptions` setup
    - `Ubar` $= 1.43$
 
 - Solution contained in the folder
-   - `7502.keB`
+   - `7502.HB.keB`
 
 Note that specifying `xi` will make the model ignore the prescribed `tau0`.
 The model will, however, calculate the true $\xi$ based on the prescribed `tau0` but only print it
@@ -254,12 +257,48 @@ because the wall shear stress varies very rapidly at the first iterations.
 
 #### Pipe flow
 
-Simulations with $Re_\tau \approx 323$, the mesh contains xx elements 
-and can be modified in the `blockMeshDict` file.
+Simulations with $Re_\tau \approx 323$, the mesh contains 2800 elements in a single cross section with $y^+_\text{min} < 0.5$.
+
+1. Newtonian with `GRkEpsilonZetaF` and `LKTSkOmegaSST`
+
+- `trasportProperties` setup
+    - `n` $= 1$
+    - `tau0` $= 0$
+    - `k` $= 3.315 \times 10^{-4}5$
+
+- `fvOptions` setup
+    - `Ubar` $= 1.69$ for `GRkEpsilonZetaF`
+    - `Ubar` $= 1.715$ for `LKTSkOmegaSST`
+
+- Solutions contained in the folders
+    - `1.kezf` for `GRkEpsilonZetaF`
+    - `1.kwsst` for `LKTSkOmegaSST`
 
 2. PL with $n = 0.6$ and `GRkEpsilonZetaF`
 
+- `trasportProperties` setup
+    - `n` $= 0.6$
+    - `tau0` $= 0$
+    - `k` $= 3.315 \times 10^{-4}$
+
+- `fvOptions` setup
+    - `Ubar` $= 0.656$
+
+- Solutions contained in the folders
+    - `6.PL.kezf`
+
 3. Bn with $\xi = 0.2$ and `LKTSkOmegaSST`
+
+- `trasportProperties` setup
+    - `n` $= 1.0$
+    - `tau0` $= 3.58 \times 10^{-3}$
+    - `k` $= 3.315 \times 10^{-4}$
+
+- `fvOptions` setup
+    - `Ubar` $= 2.272$
+
+- Solutions contained in the folders
+    - `02.Bn.kwsst`
 
 ## References
 

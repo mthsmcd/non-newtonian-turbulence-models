@@ -146,7 +146,7 @@ void LKTSkOmegaSST::correctApparentViscosity()
 
     Info << "Nu residual after " << nCorrNu_ << " iterations = " << sum(mag(etta_ - etta0)).value() << endl;
 
-    if (tau0_.value() > 0.0)
+    if (tau0_.value() > 0.0 && printXi_)
     {
         dimensionedScalar tw = wallFriction();
         Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
@@ -607,6 +607,8 @@ LKTSkOmegaSST::LKTSkOmegaSST
 
     NNFlag_(true),
 
+    printXi_(coeffDict_.getOrDefault<label>("printYieldStressRatio", false)),
+
     etta_
     (
         IOobject
@@ -728,6 +730,8 @@ bool LKTSkOmegaSST::read()
         Ctau_.readIfPresent(coeffDict());
         Cd_.readIfPresent(coeffDict());
         Cg_.readIfPresent(coeffDict());
+
+        printXi_.readIfPresent("printYieldStressRatio", coeffDict());
 
         return true;
     }

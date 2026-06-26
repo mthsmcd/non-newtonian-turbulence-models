@@ -1,0 +1,69 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2306                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    location        "0";
+    object          omega;
+}
+
+dimensions      [ 0 0 -1 0 0 0 0 ];
+
+internalField   uniform 0.075; 
+
+boundaryField
+{
+    "(inlet|outlet)"
+    {
+        type            cyclic;
+    }
+    walls
+    {
+        type            codedFixedValue;
+        value           uniform 0.075; 
+        name            RASHBOmegaWallFunction;
+        codeInclude     #{
+				#include "wallDist.H"
+				#include "fvCFD.H"
+		#};
+        code            #{
+
+			const scalarField& nnu = this->db().lookupObject<volScalarField>("nu");
+			const fvMesh& mesh_ = patch().boundaryMesh().mesh();
+			const volScalarField& y_(wallDist::New(mesh_).y());
+			
+			const label id = mesh_.boundary().findPatchID("walls");
+			const fvPatch& boundaryPatch = mesh_.boundary()[id];
+			const labelList wallCells = boundaryPatch.faceCells();
+			
+			scalarField omegaw(boundaryPatch.size(), 0.0);
+			
+			forAll(omegaw, omwi)
+			{
+				label celli = wallCells[omwi];
+				omegaw[omwi] = (10.0 * 6.0 * nnu[celli])
+								/(0.075*sqr(y_[celli]));
+			}
+			
+			operator==(omegaw);
+		#};
+        codeOptions     #{
+			-I$(LIB_SRC)/finiteVolume/lnInclude\
+			-I$(LIB_SRC)/meshTools/lnInclude\
+			-I$(LIB_SRC)/TurbulenceModels/lnInclude
+		#};
+        codeLibs        #{ -lfiniteVolume -lmeshTools 
+		#};
+    }
+}
+
+
+// ************************************************************************* //

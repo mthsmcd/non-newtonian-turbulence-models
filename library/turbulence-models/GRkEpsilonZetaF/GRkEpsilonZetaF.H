@@ -166,10 +166,8 @@ protected:
             dimensionedScalar n_;
             dimensionedScalar tau0_;
             dimensionedScalar m_;
-
-            // flag controling if the non-Newtonian part is being solved
-            // will be off in n = 1 and tau0 = 0.0
             Switch NNFlag_;
+            Switch printXi_;
 
             // number of internal nu calculations per iteration
             label nCorrNu_;

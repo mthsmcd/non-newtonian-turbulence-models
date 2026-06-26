@@ -68,7 +68,7 @@ void GRkEpsilonZetaF::correctApparentViscosity()
 
     Info << "Nu residual after " << nCorrNu_ << " iterations = " << sum(mag(etta_ - etta0)).value() << endl;
 
-    if (tau0_.value() > 0.0)
+    if (tau0_.value() > 0.0 && printXi_)
     {
         dimensionedScalar tw = wallFriction();
         Info << "Yield stress ratio tau0/tauw = " << tau0_.value()/tw.value() << endl;
@@ -517,6 +517,8 @@ GRkEpsilonZetaF::GRkEpsilonZetaF
 
     NNFlag_(true),
 
+    printXi_(coeffDict_.getOrDefault<label>("printYieldStressRatio", false)),
+
     nCorrNu_(coeffDict_.getOrDefault<label>("nInternalCorrectors", 3)),
 
     etta_
@@ -638,6 +640,7 @@ bool GRkEpsilonZetaF::read()
         Cepsn_.readIfPresent(coeffDict());
 
         epsilonZeroAtWall_.readIfPresent("epsilonZeroAtWall", coeffDict());
+        printXi_.readIfPresent("printYieldStressRatio", coeffDict());
 
         return true;
     }
