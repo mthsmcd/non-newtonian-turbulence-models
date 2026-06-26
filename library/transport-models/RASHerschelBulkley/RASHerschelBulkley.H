@@ -28,7 +28,7 @@ Class
     Foam::viscosityModels::RASHerschelBulkley
 
 Description
-     Herschel-Bulkley non-Newtonian viscosity model.
+     Herschel-Bulkley non-Newtonian viscosity model for turbulence models.
 
 SourceFiles
     RASHerschelBulkley.C
@@ -67,20 +67,6 @@ class RASHerschelBulkley
         dimensionedScalar tau0_;
         dimensionedScalar nu0_;
 
-
-protected:
-
-    // Protected data
-
-//        volScalarField nu_;
-
-
-    // Protected Member Functions
-
-        //- Calculate and return the laminar viscosity
-//        tmp<volScalarField> calcNu() const;
-
-
 public:
 
     //- Runtime type information
@@ -105,16 +91,16 @@ public:
 
     // Member Functions
 
-        //- Return the laminar viscosity
+        //- Return the  average molecular viscosity
         virtual tmp<volScalarField> nu() const
         {
             // Incompressible
             {
                 const auto* turbPtr =
-                        U_.db().findObject<incompressible::turbulenceModel>
-                                (
-                                        turbulenceModel::propertiesName
-                                );
+                U_.db().findObject<incompressible::turbulenceModel>
+                (
+                    turbulenceModel::propertiesName
+                );
 
                 if (turbPtr)
                 {
@@ -128,34 +114,14 @@ public:
 
             return nullptr;
         }
-//
-        //- Return the laminar viscosity for patch
+
+        //- Return the average molecular viscosity for patch
         virtual tmp<scalarField> nu(const label patchi) const
         {
-//            // Incompressible
-//            {
-//                const auto* turbPtr =
-//                        U_.db().findObject<incompressible::turbulenceModel>
-//                                (
-//                                        turbulenceModel::propertiesName
-//                                );
-//
-//                if (turbPtr)
-//                {
-//                    return (turbPtr->nu()->boundaryField()[patchi]);
-//                }
-//            }
-//
-//            FatalErrorInFunction
-//                    << " The turbulence model is not found in the database."
-//                    << exit(FatalError);
-//
-//            return nullptr;
-//            return nu_.boundaryField()[patchi];
             volScalarField nu_(nu());
             return nu_.boundaryField()[patchi];
         }
-//
+
         //- Correct the laminar viscosity
         virtual void correct()
         {

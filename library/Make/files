@@ -1,4 +1,4 @@
-./viscosity-models/RASHerschelBulkley/RASHerschelBulkley.C
+./transport-models/RASHerschelBulkley/RASHerschelBulkley.C
 
 ./turbulence-models/MalinKE/MalinKE.C
 ./turbulence-models/BartosikKE/BartosikKE.C

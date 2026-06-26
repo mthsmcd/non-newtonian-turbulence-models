@@ -50,25 +50,6 @@ namespace viscosityModels
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * * //
 
-//Foam::tmp<Foam::volScalarField>
-//Foam::viscosityModels::RASHerschelBulkley::calcNu() const
-//{
-//    dimensionedScalar tone("tone", dimTime, 1.0);
-//    dimensionedScalar rtone("rtone", dimless/dimTime, 1.0);
-//
-//    tmp<volScalarField> sr(strainRate());
-//
-//    return
-//    (
-//        min
-//        (
-//            nu0_,
-//            (tau0_ + k_*rtone*pow(tone*sr(), n_))
-//           /(max(sr(), dimensionedScalar ("VSMALL", dimless/dimTime, VSMALL)))
-//        )
-//    );
-//}
-
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -88,19 +69,7 @@ Foam::viscosityModels::RASHerschelBulkley::RASHerschelBulkley
         k_("k", dimViscosity, RASHerschelBulkleyCoeffs_),
         n_("n", dimless, RASHerschelBulkleyCoeffs_),
         tau0_("tau0", dimViscosity/dimTime, RASHerschelBulkleyCoeffs_),
-        nu0_("nu0", dimViscosity, RASHerschelBulkleyCoeffs_)//,
-//        nu_
-//        (
-//            IOobject
-//            (
-//                name,
-//                U_.time().timeName(),
-//                U_.db(),
-//                IOobject::NO_READ,
-//                IOobject::AUTO_WRITE
-//            ),
-//            calcNu()
-//        )
+        nu0_("nu0", dimViscosity, RASHerschelBulkleyCoeffs_)
 {}
 
 

@@ -316,7 +316,7 @@ MalinKE::MalinKE
             IOobject::NO_WRITE
         )
     ),
-
+    
     HerschelBulkleyCoeffs_
     (
         transportProperties_.subDict("RASHerschelBulkleyCoeffs")
