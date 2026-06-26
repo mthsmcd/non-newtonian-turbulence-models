@@ -166,7 +166,7 @@ Usage is quite straightforward, once the `transportProperties` and `turbulencePr
 have been set up.
 Example files are contained within the [examples](example-cases).
 
-All $k$-$\varepsilon$ models solve these two quantities with fixed zeroed boundary conditions (BCs).
+All $k$ - $\varepsilon$ models solve these two quantities with fixed zeroed boundary conditions (BCs).
 The quantities $\zeta$ and $f$ of the `GRkEpsilonZetaF` model also employ zeroed BCs.
 
 The $\omega$ field is solved with a coded BC, implemented in the `omega` files at the example folders.
