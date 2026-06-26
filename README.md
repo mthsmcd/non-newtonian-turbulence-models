@@ -181,12 +181,12 @@ Simulations with $Re_\tau \approx 395$, the mesh contains 100 elements and can b
 
 1. Newtonian with `MalinKE` and `BartosikKE`
 
-- `trasportProperties` set up
+- `trasportProperties` setup
    - `n` $= 1$
    - `tau0` $= 0$
    - `k` $= 0.0003315$
   
-- `fvOptions` set up
+- `fvOptions` setup
   - `Ubar` $= 2.3$ for `MalinKE`
   - `Ubar` $= 2.43$ for `BartosikKE`
 
@@ -206,13 +206,13 @@ demonstrated remarkably capable of converging anything.
 
 2. PL with $n = 0.75$ and `MalinKE`
 
-- `trasportProperties` set up
+- `trasportProperties` setup
    - `n` $= 0.75$
    - `tau0` $= 0$
    - `k` $= 0.0003315$
    - `nu0` $= 1e-3$
 
-- `fvOptions` set up
+- `fvOptions` setup
    - `Ubar` $= 1.085$
 
 - Solution contained in the folder
@@ -227,13 +227,13 @@ or from a PL case with a similar `n` value._
 
 3. HB with $n = 0.75$, $\xi = 0.2$ and `BartosikKE`
 
-- `trasportProperties` set up
+- `trasportProperties` setup
    - `n` $= 0.75$
    - `tau0` $= 1.01e-3$
    - `k` $= 0.0003315$
    - `xi` $= 0.2$
 
-- `fvOptions` set up
+- `fvOptions` setup
    - `Ubar` $= 1.43$
 
 - Solution contained in the folder
