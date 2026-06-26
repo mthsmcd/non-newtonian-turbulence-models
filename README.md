@@ -110,7 +110,7 @@ Simulating with a Newtonian fluid will reduce all models to their baseline [Newt
 
 #### 1. `MalinKE`
 
-Proposed in **Malin (1998)**, it is a low-Reynolds (Re) $k$-$\varepsilon$ model for Herschel-Bulkley fluids
+Proposed in **Malin (1998)**, it is a low-Reynolds (Re) $k$ - $\varepsilon$ model for Herschel-Bulkley fluids
 based on the Newtonian model of **Lam & Bremhorst (1981)**.
 
 Best suited for PL, transformed the damping function $f_\mu$ into a function of `n`.
@@ -123,7 +123,7 @@ Implemented upon OpenFOAM `LamBremhorstKE` model.
 
 #### 2. `BartosikKE`
 
-Proposed in **Bartosik (2010)**, it is a low-Re $k$-$\varepsilon$ model for Herschel-Bulkley fluids
+Proposed in **Bartosik (2010)**, it is a low-Re $k$ - $\varepsilon$ model for Herschel-Bulkley fluids
 based on the Newtonian model of **Launder & Sharma (1974)**.
 
 Best suited for Bn, transformed the damping function $f_\mu$ into a function of `xi`, the ratio of the yield stress to the wall shear stress
@@ -138,20 +138,20 @@ Implemented upon OpenFOAM `LaunderSharmaKE` model.
 
 #### 3. `GRkEpsilonZetaF`
 
-Proposed in **Gavrilov & Rudyak (2016)**, it is a four equation low-Re $k$-$\varepsilon$-$\zeta$-$f$ model
+Proposed in **Gavrilov & Rudyak (2016)**, it is a four equation low-Re $k$ - $\varepsilon$ - $\zeta$ - $f$ model
 originally proposed for PL fluids, but which can also be extended to HB.
 It is based on the Newtonian model of **Hanjalić, Popovac & Hadžiabdić (2004)**.
 
 Best suited for PL.
 Requires the definition of a regularizing parameter `m` in `transportProperties`.
 
-OpenFOAM does not dispose of the baseline Newtonian $k$-$\varepsilon$-$\zeta$-$f$, 
+OpenFOAM does not dispose of the baseline Newtonian $k$ - $\varepsilon$ - $\zeta$ - $f$, 
 it instead has the `kEpsilonPhitF` model, which is very similar and was used as the departing point 
 for this implementation.
 
 #### 4. `LKTSkOmegaSST`
 
-Proposed in **Lovato *et al.* (2022)**, a $k$-$\omega$ SST model for Herschel-Bulkley fluids
+Proposed in **Lovato *et al.* (2022)**, a $k$ - $\omega$ SST model for Herschel-Bulkley fluids
 based on the Newtonian model of **Menter (1994)**.
 
 Best suited for Bn and HB.
@@ -295,7 +295,7 @@ _Journal of Non-Newtonian Fluid Mechanics_ _**accepted for publishing**_ (2026).
 ### Baseline Newtonian models
 
 6. Lam, C. K. G. and Bremhorst, K. (1981)
-   "A modified form of the $k$-$\varepsilon$ model for predicting wall turbulence"
+   "A modified form of the $k$ - $\varepsilon$ model for predicting wall turbulence"
    _Journal of Fluids Engineering_, 103(3), 456-460.
    DOI: [10.1115/1.3240815](https://doi.org/10.1115/1.3240815)
 
