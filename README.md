@@ -177,6 +177,11 @@ compatible with the `RASHerschelBulkley` transport model.
 
 ### Example cases
 
+All simulations employ `RASHerschelBulkley` as the `transportModel`.
+Although $\nu$ is computed within the turbulence models, instead of within `RASHerschelBulkley`, it is still employed
+for coherence, _i.e._ avoid running non-Newtonian cases with `Newtonian` set up as the `transportModel` (or any other transport model).
+In this sense, at the current version of this repository, `RASHerschelBulkley` is merely a dummy transport model.
+
 #### Channel flow
 
 Simulations with $Re_\tau \approx 395$, the mesh has 100 elements covering a single cross section
