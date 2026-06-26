@@ -94,6 +94,9 @@ based on the Newtonian model of **Lam & Bremhorst (1981)**.
 Best suited for PL, transformed the damping function $f_\mu$ into a function of `n`.
 Requires the definition of a maximum regularizing viscosity `nu0` in `transportProperties`.
 
+Using this model with $n = 1$ and $\tau_0 > 0$ is equivalent to directly using the **Lam & Bremhorst (1981)** model 
+with a Bn rheology.
+
 #### 2. `BartosikKE`
 
 Proposed in **Bartosik (2010)**, it is a low-Re $k$-$\varepsilon$ model for Herschel-Bulkley fluids
@@ -104,6 +107,8 @@ Best suited for Bn, transformed the damping function $f_\mu$ into a function of 
 `xi` may be calculated iteratively or a fixed value may be imposed at `transportProperties`.
 It imposes a constant $\nu$ equal to the value at the wall.
 
+Using this model with $n \neq 1$ and $\tau_0 = 0$ is equivalent to directly using the **Launder & Sharma (1974)** 
+model with a PL rheology.
 
 #### 3. `GRkEpsilonZetaF`
 
@@ -124,7 +129,85 @@ Requires the definition of a regularizing parameter `m` in `transportProperties`
 
 ## Usage
 
+Usage is quite straightforward, once the `transportProperties` and `turbulenceProperties` dictionaries
+have been set up.
+Example files are contained within the [examples](example-cases).
+
+All $k$-$\varepsilon$ models solve these two quantities with fixed zeroed boundary conditions (BCs).
+The quantities $\zeta$ and $f$ of the `GRkEpsilonZetaF` model also share the zeroed BCs.
+
+The $\omega$ field is solved with a coded BC which is implemented in the `omega` file in the `0` folders.
+Using a coded condition is required because OpenFOAM's `omegaWallFunction` is not currently not 
+compatible with the `RASHerschelBulkley` transport model.
+
 ### Example cases
+
+#### Channel flow
+
+Simulations with $Re_\tau \approx 395$, the mesh contains 100 elements and can be modified in the `blockMeshDict` file.
+
+1. Newtonian with `MalinKE` and `BartosikKE`
+
+- `trasportProperties` set up
+   - `n` $= 1$
+   - `tau0` $= 0$
+   - `k` $= 0.0003315$
+  
+- `fvOptions` set up
+  - `Ubar` $= 2.3$ for `MalinKE`
+  - `Ubar` $= 2.43$ for `BartosikKE`
+
+- Solutions contained in the folders
+  - `1.keM` for `MalinKE`
+  - `1.keB` for `BartosikKE`
+
+The two models will reduce to the baseline Newtonian models, available at OpenFOAM: 
+`LamBremhorstKE` for `MalinKE` 
+and `LaunderSharmaKE` for `BartosikKE`.
+
+2. PL with $n = 0.75$ and the `MalinKE`
+
+- `trasportProperties` set up
+   - `n` $= 0.75$
+   - `tau0` $= 0$
+   - `k` $= 0.0003315$
+   - `nu0` $= 1e-3$
+
+- `fvOptions` set up
+   - `Ubar` $= 1.085$
+
+- Solution contained in the folder
+   - `75.keM` for `MalinKE`
+
+The maximum viscosity `nu0` corresponds to roughly 10 times the viscosity value at the wall.
+This bounding value should be adjusted accordingly to each case, but the results should be fairly independent to it
+given reasonable choices.
+
+3. HB with $n = 0.75$, $\xi = 0.2$ and `BartosikKE`
+
+- `trasportProperties` set up
+   - `n` $= 0.75$
+   - `tau0` $= 1.01e-3$
+   - `k` $= 0.0003315$
+   - `xi` $= 0.2$
+
+- `fvOptions` set up
+   - `Ubar` $= 1.43$
+
+- Solution contained in the folder
+   - `7502.keB`
+
+Note that specifying `xi` will make the model ignore the prescribed `tau0`.
+However, the fixed `xi` will probably be different from the true one, which the model will also compute
+and print to the screen on runtime to inform the user.
+
+It is recommended that the simulations should be run at first with a fixed `xi`, using the information
+printed on the screen the user can then adjust `tau0` to achieve the desired yield stress ratio.
+Once the simulation with fixed `xi` converges, the user can finally set it to zero and the model will then
+use the true calculated $\xi$ based on `tau0` to produce the final results.
+
+If instead the simulation is started directly with `xi` equal to zero, it will probably diverge 
+because the wall shear stress varies very rapidly at the first iterations.
 
 ## References
 

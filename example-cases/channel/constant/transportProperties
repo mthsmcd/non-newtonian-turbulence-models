@@ -22,7 +22,7 @@ RASHerschelBulkleyCoeffs
 {										
 	k               0.0003315; 			
 	n               0.75; 				
-	tau0            1.01e-3;
+	tau0            0.0; //1.01e-3;
 	//xi				0.2;
 	nu0             1e-3;
 	m				400;
