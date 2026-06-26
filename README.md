@@ -19,6 +19,27 @@ For full details please refer to the [review paper](#review-paper).
 
 If you find this repository useful please cite our work, as well as the [original works](#references) of the implemented models.
 
+<!-- TOC -->
+* [non-newtonian-turbulence-models](#non-newtonian-turbulence-models)
+  * [Repository structure](#repository-structure)
+  * [Library contents](#library-contents)
+    * [Transport models](#transport-models)
+      * [1. RASHerschelBulkley](#1-rasherschelbulkley)
+    * [Turbulence models](#turbulence-models)
+      * [1. `MalinKE`](#1-malinke)
+      * [2. `BartosikKE`](#2-bartosikke)
+      * [3. `GRkEpsilonZetaF`](#3-grkepsilonzetaf)
+      * [4. `LKTSkOmegaSST`](#4-lktskomegasst)
+  * [Usage](#usage)
+    * [Example cases](#example-cases)
+      * [Channel flow](#channel-flow)
+      * [Pipe flow](#pipe-flow)
+  * [References](#references)
+    * [Review paper](#review-paper)
+    * [Non-Newtonian models](#non-newtonian-models)
+    * [Baseline Newtonian models](#baseline-newtonian-models)
+<!-- TOC -->
+
 ## Repository structure
 
 All turbulence and transport models are compiled together as part of the library
@@ -30,7 +51,7 @@ To compile just run the `Allwmake` script.
 The repository also contains some OpenFOAM example cases for the channel and pipe flows,
 for more details please refer to the [usage section](#usage) and to our review paper [Macedo _et al._ (2026)](#review-paper).
 
-## Library models
+## Library contents
 
 ### Transport models
 
@@ -84,7 +105,8 @@ by each RANS, please check them out below in the listing of the [turbulence mode
 
 ### Turbulence models
 
-All models may be used in simulations with Newtonian, PL, Bn and HB fluids, but each has a fluid it is best suited for.
+All models may be used in simulations with PL, Bn and HB fluids, but each has a fluid it is best suited for.
+Simulating with a Newtonian fluid will reduce all models to their baseline [Newtonian versions](#baseline-newtonian-models).
 
 #### 1. `MalinKE`
 
@@ -96,6 +118,8 @@ Requires the definition of a maximum regularizing viscosity `nu0` in `transportP
 
 Using this model with $n = 1$ and $\tau_0 > 0$ is equivalent to directly using the **Lam & Bremhorst (1981)** model 
 with a Bn rheology.
+
+Implemented upon OpenFOAM `LamBremhorstKE` model.
 
 #### 2. `BartosikKE`
 
@@ -110,6 +134,8 @@ It imposes a constant $\nu$ equal to the value at the wall.
 Using this model with $n \neq 1$ and $\tau_0 = 0$ is equivalent to directly using the **Launder & Sharma (1974)** 
 model with a PL rheology.
 
+Implemented upon OpenFOAM `LaunderSharmaKE` model.
+
 #### 3. `GRkEpsilonZetaF`
 
 Proposed in **Gavrilov & Rudyak (2016)**, it is a four equation low-Re $k$-$\varepsilon$-$\zeta$-$f$ model
@@ -119,6 +145,10 @@ It is based on the Newtonian model of **Hanjalić, Popovac & Hadžiabdić (2004)
 Best suited for PL.
 Requires the definition of a regularizing parameter `m` in `transportProperties`.
 
+OpenFOAM does not dispose of the baseline Newtonian $k$-$\varepsilon$-$\zeta$-$f$, 
+it instead has the `kEpsilonPhitF` model, which is very similar and was used as the departing point 
+for this implementation.
+
 #### 4. `LKTSkOmegaSST`
 
 Proposed in **Lovato *et al.* (2022)**, a $k$-$\omega$ SST model for Herschel-Bulkley fluids
@@ -127,6 +157,9 @@ based on the Newtonian model of **Menter (1994)**.
 Best suited for Bn and HB.
 Requires the definition of a regularizing parameter `m` in `transportProperties`.
 
+Implemented upon OpenFOAM `kOmegaSST` model, with corrections to issues pointed by 
+the [Turbulence Modeling Resource webpage](https://tmbwg.github.io/turbmodels/openfoam_issues.html).
+
 ## Usage
 
 Usage is quite straightforward, once the `transportProperties` and `turbulenceProperties` dictionaries
@@ -134,10 +167,10 @@ have been set up.
 Example files are contained within the [examples](example-cases).
 
 All $k$-$\varepsilon$ models solve these two quantities with fixed zeroed boundary conditions (BCs).
-The quantities $\zeta$ and $f$ of the `GRkEpsilonZetaF` model also share the zeroed BCs.
+The quantities $\zeta$ and $f$ of the `GRkEpsilonZetaF` model also employ zeroed BCs.
 
-The $\omega$ field is solved with a coded BC which is implemented in the `omega` file in the `0` folders.
-Using a coded condition is required because OpenFOAM's `omegaWallFunction` is not currently not 
+The $\omega$ field is solved with a coded BC, implemented in the `omega` files at the example folders.
+The coded condition is required because OpenFOAM's `omegaWallFunction` is currently not 
 compatible with the `RASHerschelBulkley` transport model.
 
 ### Example cases
@@ -165,7 +198,13 @@ The two models will reduce to the baseline Newtonian models, available at OpenFO
 `LamBremhorstKE` for `MalinKE` 
 and `LaunderSharmaKE` for `BartosikKE`.
 
-2. PL with $n = 0.75$ and the `MalinKE`
+Note that the baseline Newtonian `LamBremhorstKE` demonstrated to be quite sensitive to 
+initial conditions.
+In my experience it would not converge if initiated with constant initial guesses.
+To circumvent this, its simulations were initialized with a `LaunderSharmaKE` model solution, which
+demonstrated remarkably capable of converging anything.
+
+2. PL with $n = 0.75$ and `MalinKE`
 
 - `trasportProperties` set up
    - `n` $= 0.75$
@@ -183,6 +222,9 @@ The maximum viscosity `nu0` corresponds to roughly 10 times the viscosity value 
 This bounding value should be adjusted accordingly to each case, but the results should be fairly independent to it
 given reasonable choices.
 
+_I recommend that any simulations with this model should be initialized with a prior solution of a Newtonian case 
+or from a PL case with a similar `n` value._
+
 3. HB with $n = 0.75$, $\xi = 0.2$ and `BartosikKE`
 
 - `trasportProperties` set up
@@ -198,16 +240,26 @@ given reasonable choices.
    - `7502.keB`
 
 Note that specifying `xi` will make the model ignore the prescribed `tau0`.
-However, the fixed `xi` will probably be different from the true one, which the model will also compute
-and print to the screen on runtime to inform the user.
+The model will, however, calculate the true $\xi$ based on the prescribed `tau0` but only print it
+to the screen on runtime to inform the user.
+In this manner, the user can know how far the specified `xi` is from the actual value.
 
-It is recommended that the simulations should be run at first with a fixed `xi`, using the information
-printed on the screen the user can then adjust `tau0` to achieve the desired yield stress ratio.
-Once the simulation with fixed `xi` converges, the user can finally set it to zero and the model will then
-use the true calculated $\xi$ based on `tau0` to produce the final results.
+It is recommended that the simulations should, at first, be run with a fixed `xi`. 
+Using the information printed on the screen the user can then adjust `tau0` to achieve the desired yield stress ratio.
+Once the simulation with fixed `xi` converges, the user can finally set it to zero, 
+the model will then use the true calculated $\xi = \tau_0 / \tau_w$ to produce the final results.
 
-If instead the simulation is started directly with `xi` equal to zero, it will probably diverge 
+In case that the simulation is started directly with `xi` equal to zero, it will probably diverge 
 because the wall shear stress varies very rapidly at the first iterations.
+
+#### Pipe flow
+
+Simulations with $Re_\tau \approx 323$, the mesh contains xx elements 
+and can be modified in the `blockMeshDict` file.
+
+2. PL with $n = 0.6$ and `GRkEpsilonZetaF`
+
+3. Bn with $\xi = 0.2$ and `LKTSkOmegaSST`
 
 ## References
 
