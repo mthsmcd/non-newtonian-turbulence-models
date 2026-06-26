@@ -179,7 +179,7 @@ compatible with the `RASHerschelBulkley` transport model.
 
 #### Channel flow
 
-Simulations with $Re_\tau \approx 395$, the mesh contains 100 elements covering a single cross section
+Simulations with $Re_\tau \approx 395$, the mesh has 100 elements covering a single cross section
 and half the channel height, with $y^+_\text{min} \approx 0.5$.
 
 1. Newtonian with `MalinKE` and `BartosikKE`
@@ -257,14 +257,14 @@ because the wall shear stress varies very rapidly at the first iterations.
 
 #### Pipe flow
 
-Simulations with $Re_\tau \approx 323$, the mesh contains 2800 elements in a single cross section with $y^+_\text{min} < 0.5$.
+Simulations with $Re_\tau \approx 323$, the mesh has 2800 elements in a single cross section with $y^+_\text{min} < 0.5$.
 
 1. Newtonian with `GRkEpsilonZetaF` and `LKTSkOmegaSST`
 
 - `trasportProperties` setup
     - `n` $= 1$
     - `tau0` $= 0$
-    - `k` $= 3.315 \times 10^{-4}5$
+    - `k` $= 3.315 \times 10^{-4}$
 
 - `fvOptions` setup
     - `Ubar` $= 1.69$ for `GRkEpsilonZetaF`
