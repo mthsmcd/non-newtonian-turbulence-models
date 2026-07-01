@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2306                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           volScalarField;
+    location        "0";
+    object          epsilon;
+}
+
+dimensions      [ 0 2 -3 0 0 0 0 ];
+
+internalField   uniform 0.0000111803;
+
+boundaryField
+{
+    "(inlet|outlet)"
+    {
+        type            cyclic;
+    }
+    channelCenter
+    {
+        type            symmetryPlane;
+    }
+    lowerWall
+    {
+        type            codedFixedValue;
+        value           uniform 0.0000111803;
+        name            RASHBEpsilonWallFunction;
+        codeInclude     #{
+				#include "wallDist.H"
+				#include "fvCFD.H"
+		#};
+        code            #{
+
+			const volScalarField& nnu = this->db().lookupObject<volScalarField>("nu");
+			const volScalarField& k = this->db().lookupObject<volScalarField>("k");
+
+			volScalarField epsw = 2.0 * nnu * magSqr(Foam::fvc::grad(sqrt(k)));
+			epsw.correctBoundaryConditions();
+			const volScalarField::Boundary& epswBf = epsw.boundaryField(); 
+		
+			const fvMesh& mesh_ = patch().boundaryMesh().mesh();
+			
+			const label id = mesh_.boundary().findPatchID("lowerWall");
+			const fvPatchField<double> epsilonw = epswBf[id];
+			
+			operator==(epsilonw);
+		#};
+        codeOptions     #{
+			-I$(LIB_SRC)/finiteVolume/lnInclude\
+			-I$(LIB_SRC)/meshTools/lnInclude\
+			-I$(LIB_SRC)/TurbulenceModels/lnInclude
+		#};
+        codeLibs        #{ -lfiniteVolume -lmeshTools 
+		#};
+    }
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+
+
+// ************************************************************************* //

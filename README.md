@@ -9,7 +9,9 @@ in the [reference papers](#references), and investigated in our review paper:
 - **_"Turbulence modeling for viscoplastic fluids: state-of-the-art review and open-source investigation comparing with new DNS"_
  Matheus S. S. Macedo, Gustavo E. O. Celis, Hamidreza Anbarlooei, Roney L. Thompson,
 Daiane M. Iceri, Letícia Bizarre, Vanessa Richon and Marcelo S. Castro,
-accepted for publishing at the _Journal of Non-Newtonian Fluid Mechanics_ in June 2026.**
+published at the _Journal of Non-Newtonian Fluid Mechanics_ in July 2026.**
+
+Available at https://doi.org/10.1016/j.jnnfm.2026.105636
 
 Below you can find a [list of the models](#turbulence-models) with brief descriptions, 
 details on their [usage](#usage) and the [references](#non-newtonian-models)
@@ -58,7 +60,7 @@ for more details please refer to the [usage section](#usage) and to our review p
 #### 1. RASHerschelBulkley
 
 In the RANS models of this repository, the average molecular viscosity $\nu$ depends on turbulence, for this reason we have
-created this separate transport model for turbulent HB fluids.
+created this separate transport model for turbulent HB fluids (note that, with adequate parameters, HB reduces to Bn, Pl or Newtonian).
 However, because each turbulence model has a particular way of modeling $\nu$,
 the fluid parameters will be read by the **turbulence model** and $\nu$ will also be calculated
 within the **turbulence model**.
@@ -70,7 +72,7 @@ They should be defined in the `transportProperties` dictionary in the following 
 RASHerschelBulkley
 {
   // consistency index
-  k     <value>;
+  K     <value>;
   
   // flow behaviour index
   n     <value>; 
@@ -92,14 +94,14 @@ RASHerschelBulkley
 }
 ```
 
-Note that to reduce the `RASHerschelBulkley` to Newtonian, PL and Bn fluids you just need to set
+To reduce the `RASHerschelBulkley` to Newtonian, PL and Bn fluids you just need to set
 the parameters accordingly:
 
 - Newtonian: $n = 1$ and $\tau_0 = 0$
 - PL: $\tau_0 = 0$
 - Bn: $n = 1$
 
-All turbulence models require the definition of `k`, `n` and `tau0`. 
+All turbulence models require the definition of `K`, `n` and `tau0`. 
 Other additional parameters are individually required 
 by each RANS, please check them out below in the listing of the [turbulence models](#turbulence-models).
 
@@ -110,7 +112,7 @@ Simulating with a Newtonian fluid will reduce all models to their baseline [Newt
 
 #### 1. `MalinKE`
 
-Proposed in **Malin (1998)**, it is a low-Reynolds (Re) $k$ - $\varepsilon$ model for Herschel-Bulkley fluids
+Proposed in **Malin (1998)**, it is a low-Reynolds (Re) $k$ - $\varepsilon$ model for HB fluids
 based on the Newtonian model of **Lam & Bremhorst (1981)**.
 
 - Best suited for PL, transformed the damping function $f_\mu$ into a function of `n`.
@@ -121,16 +123,14 @@ based on the Newtonian model of **Lam & Bremhorst (1981)**.
 
 #### 2. `BartosikKE`
 
-Proposed in **Bartosik (2010)**, it is a low-Re $k$ - $\varepsilon$ model for Herschel-Bulkley fluids
+Proposed in **Bartosik (2010)**, it is a low-Re $k$ - $\varepsilon$ model for HB fluids
 based on the Newtonian model of **Launder & Sharma (1974)**.
 
 - Best suited for Bn, transformed the damping function $f_\mu$ into a function of `xi`, the ratio of the yield stress to the wall shear stress
 (_i.e._ $\xi = \tau_0 / \tau_w$).
-- `xi` may be calculated iteratively or a fixed value may be imposed at `transportProperties`.
-- It imposes a constant $\nu$ equal to the value at the wall.
+- `xi` may be calculated iteratively or a fixed value may be imposed in `transportProperties`.
+- It uses a constant $\nu$ equal to the value at the wall.
 - Implemented upon OpenFOAM `LaunderSharmaKE` model.
-- Using this model with $n \neq 1$ and $\tau_0 = 0$ is equivalent to directly using the **Launder & Sharma (1974)** 
-model with a PL rheology.
 
 #### 3. `GRkEpsilonZetaF`
 
@@ -145,19 +145,20 @@ It is based on the Newtonian model of **Hanjalić, Popovac & Hadžiabdić (2004)
 - Has a boolean control parameter `printYieldStressRatio` which determines if the solver will compute the wall
 shear stress at every iteration and print $\xi = \tau_0 / \tau_w$.
 - Has an optional regularizing parameter `m` in `transportProperties` for Papanastasiou's regularization, if not defined
-no regularization is imposed as, in most cases, it is not required.
+no regularization is imposed. In most cases it is not required.
 - OpenFOAM does not dispose of the baseline Newtonian $k$ - $\varepsilon$ - $\zeta$ - $f$,
     it instead has the `kEpsilonPhitF` model, which is very similar and was used as the departing point
     for this implementation.
 
 #### 4. `LKTSkOmegaSST`
 
-Proposed in **Lovato *et al.* (2022)**, a $k$ - $\omega$ SST model for Herschel-Bulkley fluids
+Proposed in **Lovato *et al.* (2022)**, a $k$ - $\omega$ SST model for HB fluids
 based on the Newtonian model of **Menter (1994)**.
 
-- Best suited for Bn and HB.
-- Also has the `nInternalCorrectors` and `printYieldStressRatio` control parameters, with the same defaults.
-- Also has the optional regularizing Papanastasiou parameter `m`.
+- Best suited for Bn.
+- It is an extension of the `GRkEpsilonZetaF` model, with some adaptations.
+- Also has the `nInternalCorrectors` and `printYieldStressRatio` control parameters, with same defaults.
+- Also has the optional Papanastasiou regularizing parameter `m`.
 
 - Implemented upon OpenFOAM `kOmegaSST` model, with corrections to issues pointed by 
 the [Turbulence Modeling Resource webpage](https://tmbwg.github.io/turbmodels/openfoam_issues.html).
@@ -168,6 +169,8 @@ Usage is quite straightforward, once the `transportProperties` and `turbulencePr
 have been set up.
 Example files are contained within the [examples folder](example-cases).
 
+### Boundary conditions
+
 All $k$ - $\varepsilon$ models solve these two quantities with fixed zeroed boundary conditions (BCs).
 The quantities $\zeta$ and $f$ of the `GRkEpsilonZetaF` model also employ zeroed BCs.
 
@@ -175,24 +178,29 @@ The $\omega$ field is solved with a coded BC, implemented in the `omega` files a
 The coded condition is required because OpenFOAM's `omegaWallFunction` is currently not 
 compatible with the `RASHerschelBulkley` transport model.
 
+The `GRkEpsilonZetaF` may also be run with the standard $\varepsilon$ BC ($2 \nu \big[\frac{\partial \sqrt{k}}{ \partial y}\big]^2$) by setting the switch `epsilonZeroAtWall` to
+`false` in the `turbulenceProperties` dictionary.
+This, however, requires using a coded condition in the epsilon files, alike done with $\omega$.
+The `epsilon.codedFixedValue` file with the standard BC is included in the `0` folder of the channel example case.
+
 ### Example cases
 
 All simulations employ `RASHerschelBulkley` as the `transportModel`.
 Although $\nu$ is computed within the turbulence models, instead of within `RASHerschelBulkley`, it is still employed
 for coherence, _i.e._ avoid running non-Newtonian cases with `Newtonian` set up as the `transportModel` (or any other transport model).
-In this sense, at the current version of this repository, `RASHerschelBulkley` is merely a dummy transport model.
+In this sense, at the current version of the `libNonNewtonianRAS` library, `RASHerschelBulkley` is merely a dummy transport model.
 
 #### Channel flow
 
 Simulations with $Re_\tau \approx 395$, the mesh has 100 elements covering a single cross section
 and half the channel height, with $y^+_\text{min} \approx 0.5$.
 
-1. Newtonian with `MalinKE` and `BartosikKE`
+1. **Newtonian with `MalinKE` and `BartosikKE`**
 
 - `trasportProperties` setup
    - `n` $= 1$
    - `tau0` $= 0$
-   - `k` $= 3.315 \times 10^{-4}$
+   - `K` $= 3.315 \times 10^{-4}$
   
 - `fvOptions` setup
   - `Ubar` $= 2.3$ for `MalinKE`
@@ -210,14 +218,14 @@ Note that the baseline Newtonian `LamBremhorstKE` demonstrated to be quite sensi
 initial conditions.
 In my experience it would not converge if initiated with constant initial guesses.
 To circumvent this, its simulations were initialized with a `LaunderSharmaKE` model solution, which
-demonstrated remarkably capable of converging anything.
+demonstrated remarkable capacity of converging anything.
 
-2. PL with $n = 0.75$ and `MalinKE`
+2. **PL with $n = 0.75$ and `MalinKE`**
 
 - `trasportProperties` setup
    - `n` $= 0.75$
    - `tau0` $= 0$
-   - `k` $= 3.315 \times 10^{-4}$
+   - `K` $= 3.315 \times 10^{-4}$
    - `nu0` $= 10^{-3}$
 
 - `fvOptions` setup
@@ -233,12 +241,12 @@ given reasonable choices.
 _I recommend that any simulations with this model should be initialized with a prior solution of a Newtonian case 
 or from a PL case with a similar `n` value._
 
-3. HB with $n = 0.75$, $\xi = 0.2$ and `BartosikKE`
+3. **HB with $n = 0.75$, $\xi = 0.2$ and `BartosikKE`**
 
 - `trasportProperties` setup
    - `n` $= 0.75$
    - `tau0` $= 1.01 \times 10^{-3}$
-   - `k` $= 3.315 \times 10^{-4}$
+   - `K` $= 3.315 \times 10^{-4}$
    - `xi` $= 0.2$
 
 - `fvOptions` setup
@@ -247,8 +255,8 @@ or from a PL case with a similar `n` value._
 - Solution contained in the folder
    - `7502.HB.keB`
 
-Note that specifying `xi` will make the model ignore the prescribed `tau0`.
-The model will, however, calculate the true $\xi$ based on the prescribed `tau0` but only print it
+Specifying `xi` will make the model ignore the prescribed `tau0`.
+The model will, however, calculate the true $\xi$ based on `tau0` but only print it
 to the screen on runtime to inform the user.
 In this manner, the user can know how far the specified `xi` is from the actual value.
 
@@ -264,12 +272,12 @@ because the wall shear stress varies very rapidly at the first iterations.
 
 Simulations with $Re_\tau \approx 323$, the mesh has 2800 elements in a single cross section with $y^+_\text{min} < 0.5$.
 
-1. Newtonian with `GRkEpsilonZetaF` and `LKTSkOmegaSST`
+1. **Newtonian with `GRkEpsilonZetaF` and `LKTSkOmegaSST`**
 
 - `trasportProperties` setup
     - `n` $= 1$
     - `tau0` $= 0$
-    - `k` $= 3.315 \times 10^{-4}$
+    - `K` $= 3.315 \times 10^{-4}$
 
 - `fvOptions` setup
     - `Ubar` $= 1.69$ for `GRkEpsilonZetaF`
@@ -279,12 +287,12 @@ Simulations with $Re_\tau \approx 323$, the mesh has 2800 elements in a single c
     - `1.kezf` for `GRkEpsilonZetaF`
     - `1.kwsst` for `LKTSkOmegaSST`
 
-2. PL with $n = 0.6$ and `GRkEpsilonZetaF`
+2. **PL with $n = 0.6$ and `GRkEpsilonZetaF`**
 
 - `trasportProperties` setup
     - `n` $= 0.6$
     - `tau0` $= 0$
-    - `k` $= 3.315 \times 10^{-4}$
+    - `K` $= 3.315 \times 10^{-4}$
 
 - `fvOptions` setup
     - `Ubar` $= 0.656$
@@ -292,12 +300,12 @@ Simulations with $Re_\tau \approx 323$, the mesh has 2800 elements in a single c
 - Solutions contained in the folders
     - `6.PL.kezf`
 
-3. Bn with $\xi = 0.2$ and `LKTSkOmegaSST`
+3. **Bn with $\xi = 0.2$ and `LKTSkOmegaSST`**
 
 - `trasportProperties` setup
     - `n` $= 1.0$
     - `tau0` $= 3.58 \times 10^{-3}$
-    - `k` $= 3.315 \times 10^{-4}$
+    - `K` $= 3.315 \times 10^{-4}$
 
 - `fvOptions` setup
     - `Ubar` $= 2.272$
@@ -311,8 +319,9 @@ Simulations with $Re_\tau \approx 323$, the mesh has 2800 elements in a single c
 
 1. Macedo, M. S. S., Celis, G. E. O., Anbarlooei, H. R., Thompson, R. L.,
    Iceri, D. M., Bizarre, L., Richon, V. and Castro M. S. 
-"Turbulence modeling for viscoplastic fluids: state-of-the-art review and open-source investigation comparing with new DNS"
-_Journal of Non-Newtonian Fluid Mechanics_ _**accepted for publishing**_ (2026).
+    "Turbulence modeling for viscoplastic fluids: state-of-the-art review and open-source investigation comparing with new DNS"
+    _Journal of Non-Newtonian Fluid Mechanics_, 105636, (2026).
+    DOI: [10.1016/j.jnnfm.2026.105636](https://doi.org/10.1016/j.jnnfm.2026.105636)
 
 ### Non-Newtonian models
 
