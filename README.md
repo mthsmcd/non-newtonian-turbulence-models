@@ -272,6 +272,18 @@ because the wall shear stress varies very rapidly at the first iterations.
 
 Simulations with $Re_\tau \approx 323$, the mesh has 2800 elements in a single cross section with $y^+_\text{min} < 0.5$.
 
+The python script [`blockMesh-generator.py`](example-cases/pipe/system/blockMesh-generator.py) is provided, it creates
+a `blockMeshDict` file for the pipe mesh with different configurations according to the choice of the parameters in the script.
+Using this file, the mesh will always have two regions: inner square and in-between square and outer circle.
+Control parameters are: 
+- pipe radius;
+- pipe length;
+- number of elements in streamwise direction ;
+- size and curvature of inner square;
+- number of elements per inner square edge;
+- number of elements in-between outer circle (wall) and inner square;
+- cell grading from the inner square towards the outer circle.
+
 1. **Newtonian with `GRkEpsilonZetaF` and `LKTSkOmegaSST`**
 
 - `trasportProperties` setup
