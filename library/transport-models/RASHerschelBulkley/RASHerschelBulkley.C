@@ -70,8 +70,7 @@ Foam::viscosityModels::RASHerschelBulkley::RASHerschelBulkley
     ),
         k_("k", dimViscosity, RASHerschelBulkleyCoeffs_),
         n_("n", dimless, RASHerschelBulkleyCoeffs_),
-        tau0_("tau0", dimViscosity/dimTime, RASHerschelBulkleyCoeffs_),
-        nu0_("nu0", dimViscosity, RASHerschelBulkleyCoeffs_)
+        tau0_("tau0", dimViscosity/dimTime, RASHerschelBulkleyCoeffs_)
 {}
 
 
@@ -90,7 +89,6 @@ bool Foam::viscosityModels::RASHerschelBulkley::read
     RASHerschelBulkleyCoeffs_.readEntry("k", k_);
     RASHerschelBulkleyCoeffs_.readEntry("n", n_);
     RASHerschelBulkleyCoeffs_.readEntry("tau0", tau0_);
-    RASHerschelBulkleyCoeffs_.readEntry("nu0", nu0_);
 
     return true;
 }

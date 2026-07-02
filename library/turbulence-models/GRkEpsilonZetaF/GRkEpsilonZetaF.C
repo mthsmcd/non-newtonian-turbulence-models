@@ -190,7 +190,6 @@ tmp<volScalarField> GRkEpsilonZetaF::dNudG(const volScalarField& sr) const
     }
 
     return (-tau0_  + (n_ - 1.0)*Kind_*rtone*pow(tone*sr, n_))/max(sqr(sr), dimensionedScalar("SMALL", sqr(sr.dimensions()), SMALL));
-
 }
 
 

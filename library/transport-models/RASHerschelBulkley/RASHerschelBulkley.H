@@ -67,7 +67,6 @@ class RASHerschelBulkley
         dimensionedScalar k_;
         dimensionedScalar n_;
         dimensionedScalar tau0_;
-        dimensionedScalar nu0_;
 
 public:
 
@@ -146,12 +145,6 @@ public:
         virtual dimensionedScalar tau0() const
         {
             return tau0_;
-        }
-
-        // Return unyielded viscosity
-        virtual dimensionedScalar nu0() const
-        {
-            return nu0_;
         }
 
         //- Read transportProperties dictionary
